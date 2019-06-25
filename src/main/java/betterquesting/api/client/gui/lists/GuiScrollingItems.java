@@ -3,6 +3,10 @@ package betterquesting.api.client.gui.lists;
 import java.util.ArrayList;
 import java.util.List;
 import org.lwjgl.opengl.GL11;
+import codechicken.nei.NEIClientConfig;
+import codechicken.nei.NEIClientUtils;
+import codechicken.nei.recipe.GuiCraftingRecipe;
+import codechicken.nei.recipe.GuiUsageRecipe;
 import cpw.mods.fml.common.Loader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.creativetab.CreativeTabs;
@@ -171,6 +175,18 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 		@Override
 		public void onMouseClick(int mx, int my, int px, int py, int click, int index)
 		{
+			// NEI Integration for left and right click
+			if(stack != null && isWithin(mx, my, px + 2, py + 2, 32, 32)) {
+				if(Loader.isModLoaded("NotEnoughItems")) {
+					try {
+						if(click == 0) {
+							GuiCraftingRecipe.openRecipeGui("item", stack.getBaseStack());
+						} else if(click == 1) {
+							GuiUsageRecipe.openRecipeGui("item", stack.getBaseStack());
+						}
+					} catch(Exception e){}
+				}
+			}
 		}
 
 		@Override
@@ -186,14 +202,14 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 		}
 
 		public void onKeyTyped(char c, int keyCode) {
-			// NEI Integration for 'R' and 'U' keys
-			if(stack != null && (c == 'r' || c == 'u') && isWithin(this.mx3, this.my3, this.py3 + 2, this.py3 + 2, 32, 32)) {
+			// NEI Integration for recipe and usage keys
+			if(stack != null && isWithin(this.mx3, this.my3, this.py3 + 2, this.py3 + 2, 32, 32)) {
 				if(Loader.isModLoaded("NotEnoughItems")) {
 					try {
-						if(c == 'r') {
-							codechicken.nei.recipe.GuiCraftingRecipe.openRecipeGui("item", stack.getBaseStack());
-						} else {
-							codechicken.nei.recipe.GuiUsageRecipe.openRecipeGui("item", stack.getBaseStack());
+						if(keyCode == NEIClientConfig.getKeyBinding("gui.usage") || (keyCode == NEIClientConfig.getKeyBinding("gui.recipe") && NEIClientUtils.shiftKey())) {
+							GuiCraftingRecipe.openRecipeGui("item", stack.getBaseStack());
+						} else if(keyCode == NEIClientConfig.getKeyBinding("gui.recipe")) {
+							GuiUsageRecipe.openRecipeGui("item", stack.getBaseStack());
 						}
 					} catch(Exception e){}
 				}
