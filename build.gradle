@@ -17,7 +17,7 @@ buildscript {
 
 apply plugin: 'forge'
 
-version = "CI_MOD_VERSION"
+version = "2.0-JADED_PATCHED"
 group= "betterquesting" // http://maven.apache.org/guides/mini/guide-naming-conventions.html
 archivesBaseName = "BetterQuesting"
 
@@ -28,7 +28,15 @@ minecraft {
     version = "1.7.10-10.13.4.1448-1.7.10"
 }
 
+repositories {
+	maven {
+		name "CB Repo"
+		url "http://chickenbones.net/maven/"
+	}
+}
+
 dependencies {
+	compile "codechicken:NotEnoughItems:1.7.10-1.0.5.120:dev"
 }
 
 processResources
