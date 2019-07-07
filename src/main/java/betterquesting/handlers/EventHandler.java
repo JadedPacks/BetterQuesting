@@ -262,7 +262,10 @@ public class EventHandler
 		QuestLineDatabase.INSTANCE.reset();
 		LifeDatabase.INSTANCE.reset();
 		NameCache.INSTANCE.reset();
-		GuiQuestLinesMain.bookmarked = null;
+
+		if(BetterQuesting.proxy.isClient()) {
+			GuiQuestLinesMain.bookmarked = null;
+		}
 		
 		MinecraftServer server = MinecraftServer.getServer();
 		
