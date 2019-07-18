@@ -211,9 +211,9 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 						ItemStack tmpStack = subStacks.get((int)(Minecraft.getSystemTime()/1000)%subStacks.size()).copy();
 						tmpStack.setTagCompound(stack.GetTagCompound());
 						if(keyCode == NEIClientConfig.getKeyBinding("gui.usage") || (keyCode == NEIClientConfig.getKeyBinding("gui.recipe") && NEIClientUtils.shiftKey())) {
-							GuiCraftingRecipe.openRecipeGui("item", tmpStack);
-						} else if(keyCode == NEIClientConfig.getKeyBinding("gui.recipe")) {
 							GuiUsageRecipe.openRecipeGui("item", tmpStack);
+						} else if(keyCode == NEIClientConfig.getKeyBinding("gui.recipe")) {
+							GuiCraftingRecipe.openRecipeGui("item", tmpStack);
 						}
 					} catch(Exception e){}
 				}
