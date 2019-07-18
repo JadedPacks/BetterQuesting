@@ -20,19 +20,19 @@ import betterquesting.api.utils.RenderUtils;
 public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.ScrollingEntryItem>
 {
 	private final Minecraft mc;
-	
+
 	public GuiScrollingItems(Minecraft mc, int x, int y, int w, int h)
 	{
 		super(mc, x, y, w, h);
 		this.mc = mc;
 		this.allowDragScroll(true);
 	}
-	
+
 	public void addItem(BigItemStack stack)
 	{
 		addItem(stack, stack.getBaseStack().getDisplayName());
 	}
-	
+
 	public void addItem(BigItemStack stack, String description)
 	{
 		this.getEntryList().add(new ScrollingEntryItem(mc, stack, description));
@@ -44,28 +44,28 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 			item.onKeyTyped(c, keyCode);
 		}
 	}
-	
+
 	public static class ScrollingEntryItem extends GuiElement implements IScrollingEntry
 	{
 		private final Minecraft mc;
 		private BigItemStack stack;
 		private String desc = "";
 		private int mx3, my3, px3, py3;
-		
+
 		private List<ItemStack> subStacks = new ArrayList<ItemStack>();
-		
+
 		public ScrollingEntryItem(Minecraft mc, BigItemStack stack, String desc)
 		{
 			this.mc = mc;
 			this.stack = stack;
-			
+
 			this.setDescription(desc);
-			
+
 			if(stack == null)
 			{
 				return;
 			}
-			
+
 			if(stack.oreDict != null && stack.oreDict.length() > 0)
 			{
 				for(ItemStack oreStack : OreDictionary.getOres(stack.oreDict))
@@ -74,16 +74,16 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 					{
 						continue;
 					}
-					
+
 					Item oItem = oreStack.getItem();
-					
+
 					List<ItemStack> tmp = new ArrayList<ItemStack>();
-					
+
 					if(oreStack.getItemDamage() == OreDictionary.WILDCARD_VALUE)
 					{
 						oItem.getSubItems(oItem, CreativeTabs.tabAllSearch, tmp);
 					}
-					
+
 					if(tmp.size() <= 0)
 					{
 						if(!subStacks.contains(oreStack))
@@ -105,53 +105,53 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 			{
 				stack.getBaseStack().getItem().getSubItems(stack.getBaseStack().getItem(), CreativeTabs.tabAllSearch, subStacks);
 			}
-			
+
 			if(subStacks.size() <= 0)
 			{
 				subStacks.add(stack.getBaseStack());
 			}
 		}
-		
+
 		public void setDescription(String desc)
 		{
 			this.desc = desc == null? "" : desc;
 		}
-		
+
 		@Override
 		public void drawBackground(int mx, int my, int px, int py, int width)
 		{
 			GL11.glPushMatrix();
-			
+
 			RenderUtils.DrawLine(px, py, px + width, py, 1F, getTextColor());
-			
+
 			GL11.glColor4f(1F, 1F, 1F, 1F);
-			
+
 			GL11.glTranslatef(px, py, 0F);
 			GL11.glScalef(2F, 2F, 2F);
-			
+
 			this.mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
 			this.drawTexturedModalRect(0, 0, 0, 48, 18, 18);
-			
+
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
-			
+
 			if(stack != null)
 			{
 				ItemStack tmpStack = subStacks.get((int)(Minecraft.getSystemTime()/1000)%subStacks.size()).copy();
 				tmpStack.setTagCompound(stack.GetTagCompound());
-				
+
 				try
 				{
 					RenderUtils.RenderItemStack(mc, tmpStack, 1, 1, stack.stackSize > 1? "" + stack.stackSize : "");
 				} catch(Exception e){}
 			}
-			
+
 			GL11.glDisable(GL11.GL_DEPTH_TEST);
-			
+
 			GL11.glPopMatrix();
-			
+
 			RenderUtils.drawSplitString(mc.fontRenderer, desc, px + 40, py + 4, width - 40, getTextColor(), false, 0, 2);
 		}
-		
+
 		@Override
 		@SuppressWarnings("unchecked")
 		public void drawForeground(int mx, int my, int px, int py, int width)
@@ -164,14 +164,14 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 			{
 				ItemStack tmpStack = subStacks.get((int)(Minecraft.getSystemTime()/1000)%subStacks.size()).copy();
 				tmpStack.setTagCompound(stack.GetTagCompound());
-				
+
 				try
 				{
 					this.drawTooltip(tmpStack.getTooltip(mc.thePlayer, mc.gameSettings.advancedItemTooltips), mx, my, mc.fontRenderer);
 				} catch(Exception e){}
 			}
 		}
-		
+
 		@Override
 		public void onMouseClick(int mx, int my, int px, int py, int click, int index)
 		{
@@ -179,10 +179,12 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 			if(stack != null && isWithin(mx, my, px + 2, py + 2, 32, 32)) {
 				if(Loader.isModLoaded("NotEnoughItems")) {
 					try {
+						ItemStack tmpStack = subStacks.get((int)(Minecraft.getSystemTime()/1000)%subStacks.size()).copy();
+						tmpStack.setTagCompound(stack.GetTagCompound());
 						if(click == 0) {
-							GuiCraftingRecipe.openRecipeGui("item", stack.getBaseStack());
+							GuiCraftingRecipe.openRecipeGui("item", tmpStack);
 						} else if(click == 1) {
-							GuiUsageRecipe.openRecipeGui("item", stack.getBaseStack());
+							GuiUsageRecipe.openRecipeGui("item", tmpStack);
 						}
 					} catch(Exception e){}
 				}
@@ -203,13 +205,15 @@ public class GuiScrollingItems extends GuiScrollingBase<GuiScrollingItems.Scroll
 
 		public void onKeyTyped(char c, int keyCode) {
 			// NEI Integration for recipe and usage keys
-			if(stack != null && isWithin(this.mx3, this.my3, this.py3 + 2, this.py3 + 2, 32, 32)) {
+			if(stack != null && isWithin(mx3, my3, px3 + 2, py3 + 2, 32, 32)) {
 				if(Loader.isModLoaded("NotEnoughItems")) {
 					try {
+						ItemStack tmpStack = subStacks.get((int)(Minecraft.getSystemTime()/1000)%subStacks.size()).copy();
+						tmpStack.setTagCompound(stack.GetTagCompound());
 						if(keyCode == NEIClientConfig.getKeyBinding("gui.usage") || (keyCode == NEIClientConfig.getKeyBinding("gui.recipe") && NEIClientUtils.shiftKey())) {
-							GuiCraftingRecipe.openRecipeGui("item", stack.getBaseStack());
+							GuiCraftingRecipe.openRecipeGui("item", tmpStack);
 						} else if(keyCode == NEIClientConfig.getKeyBinding("gui.recipe")) {
-							GuiUsageRecipe.openRecipeGui("item", stack.getBaseStack());
+							GuiUsageRecipe.openRecipeGui("item", tmpStack);
 						}
 					} catch(Exception e){}
 				}
