@@ -448,6 +448,7 @@ public class EventHandler
 	                target.mkdir();
                     try {
                     	copyDirectory(path, target);
+	                    path.delete();
                     } catch(IOException e) {
                     	e.printStackTrace();
                     }
