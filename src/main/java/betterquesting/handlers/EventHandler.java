@@ -1,6 +1,6 @@
 package betterquesting.handlers;
 
-import java.io.File;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -69,7 +69,7 @@ public class EventHandler
 	public void onKey(InputEvent.KeyInputEvent event)
 	{
 		Minecraft mc = Minecraft.getMinecraft();
-		
+
 		if(BQ_Keybindings.openQuests.isPressed())
 		{
 			if(BQ_Settings.useBookmark && GuiQuestLinesMain.bookmarked != null)
@@ -81,7 +81,7 @@ public class EventHandler
 			}
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onLivingUpdate(LivingUpdateEvent event)
 	{
@@ -89,36 +89,36 @@ public class EventHandler
 		{
 			return;
 		}
-		
+
 		if(event.entityLiving instanceof EntityPlayer)
 		{
 			EntityPlayer player = (EntityPlayer)event.entityLiving;
 			UUID uuid = QuestingAPI.getQuestingUUID(player);
-			
+
 			List<IQuest> syncList = new ArrayList<IQuest>();
 			List<QuestInstance> updateList = new ArrayList<QuestInstance>();
-			
+
 			for(Entry<ITask,IQuest> entry : QuestCache.INSTANCE.getActiveTasks(uuid).entrySet())
 			{
 				ITask task = entry.getKey();
 				IQuest quest = entry.getValue();
-				
+
 				if(!task.isComplete(uuid))
 				{
 					task.update(player, quest); // Legacy support only. Will be replaced by ITickableTask
-					
+
 					if(task instanceof ITickableTask)
 					{
 						((ITickableTask)task).updateTask(player, quest);
 					}
-					
+
 					if(task.isComplete(uuid))
 					{
 						if(!syncList.contains(quest))
 						{
 							syncList.add(quest);
 						}
-						
+
 						if(!updateList.contains(quest) && quest instanceof QuestInstance)
 						{
 							updateList.add((QuestInstance)quest);
@@ -126,31 +126,31 @@ public class EventHandler
 					}
 				}
 			}
-			
+
 			if(player.ticksExisted%20 == 0)
 			{
 				for(IQuest quest : QuestCache.INSTANCE.getActiveQuests(uuid))
 				{
 					quest.update(player);
-					
+
 					if(quest.isComplete(uuid) && !syncList.contains(quest))
 					{
 						syncList.add(quest);
 						updateList.remove(quest);
 					}
 				}
-				
+
 				QuestCache.INSTANCE.updateCache(player);
 			} else
 			{
 				Iterator<IQuest> iterator = syncList.iterator();
-				
+
 				while(iterator.hasNext())
 				{
 					IQuest quest = iterator.next();
-					
+
 					quest.update(player);
-					
+
 					if(quest.isComplete(uuid) && !quest.canSubmit(player))
 					{
 						iterator.remove();
@@ -158,19 +158,19 @@ public class EventHandler
 					}
 				}
 			}
-			
+
 			for(IQuest quest : syncList)
 			{
 				PacketSender.INSTANCE.sendToAll(quest.getSyncPacket());
 			}
-			
+
 			for(QuestInstance quest : updateList)
 			{
 				quest.postPresetNotice(player, 1);
 			}
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event)
 	{
@@ -180,67 +180,67 @@ public class EventHandler
 			ConfigHandler.initConfigs();
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onWorldSave(WorldEvent.Save event)
 	{
 		if(!event.world.isRemote && BQ_Settings.curWorldDir != null && event.world.provider.dimensionId == 0)
 		{
 			// === CONFIG ===
-			
+
 			JsonObject jsonCon = new JsonObject();
-			
+
 			jsonCon.add("questSettings", QuestSettings.INSTANCE.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
 			jsonCon.add("questDatabase", QuestDatabase.INSTANCE.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
 			jsonCon.add("questLines", QuestLineDatabase.INSTANCE.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-			
+
 			jsonCon.addProperty("format", BetterQuesting.FORMAT);
-			
+
 			JsonHelper.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestDatabase.json"), jsonCon);
-			
+
 			// === PROGRESS ===
-			
+
 			JsonObject jsonProg = new JsonObject();
-			
+
 			jsonProg.add("questProgress", QuestDatabase.INSTANCE.writeToJson(new JsonArray(), EnumSaveType.PROGRESS));
-			
+
 			JsonHelper.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestProgress.json"), jsonProg);
-			
+
 			// === PARTIES ===
-			
+
 			JsonObject jsonP = new JsonObject();
-			
+
 			jsonP.add("parties", PartyManager.INSTANCE.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-			
+
 			JsonHelper.WriteToFile(new File(BQ_Settings.curWorldDir, "QuestingParties.json"), jsonP);
-			
+
 			// === NAMES ===
-			
+
 			JsonObject jsonN = new JsonObject();
-			
+
 			jsonN.add("nameCache", NameCache.INSTANCE.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-			
+
 			JsonHelper.WriteToFile(new File(BQ_Settings.curWorldDir, "NameCache.json"), jsonN);
-		    
+
 		    // === LIVES ===
-		    
+
 		    JsonObject jsonL = new JsonObject();
-		    
+
 		    jsonL.add("lifeDatabase", LifeDatabase.INSTANCE.writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
-		    
+
 		    JsonHelper.WriteToFile(new File(BQ_Settings.curWorldDir, "LifeDatabase.json"), jsonL);
-		    
+
 		    MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Save());
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onWorldUnload(WorldEvent.Unload event)
 	{
 		if(!event.world.isRemote && !MinecraftServer.getServer().isServerRunning())
 		{
 			BQ_Settings.curWorldDir = null;
-			
+
 			QuestSettings.INSTANCE.reset();
 			QuestDatabase.INSTANCE.reset();
 			QuestLineDatabase.INSTANCE.reset();
@@ -248,7 +248,7 @@ public class EventHandler
 			NameCache.INSTANCE.reset();
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onWorldLoad(WorldEvent.Load event)
 	{
@@ -256,7 +256,7 @@ public class EventHandler
 		{
 			return;
 		}
-		
+
 		QuestSettings.INSTANCE.reset();
 		QuestDatabase.INSTANCE.reset();
 		QuestLineDatabase.INSTANCE.reset();
@@ -266,11 +266,11 @@ public class EventHandler
 		if(BetterQuesting.proxy.isClient()) {
 			GuiQuestLinesMain.bookmarked = null;
 		}
-		
+
 		MinecraftServer server = MinecraftServer.getServer();
-		
+
 		File readDir;
-		
+
 		if(BetterQuesting.proxy.isClient())
 		{
 			BQ_Settings.curWorldDir = server.getFile("saves/" + server.getFolderName() + "/betterquesting");
@@ -280,7 +280,7 @@ public class EventHandler
 			BQ_Settings.curWorldDir = server.getFile(server.getFolderName() + "/betterquesting");
 			readDir = server.getFile(server.getFolderName());
 		}
-    	
+
 		// Workaround for old files
 		boolean rename = false;
 		File legFile = new File(readDir, "QuestDatabase.json");
@@ -291,16 +291,16 @@ public class EventHandler
 		{
 			readDir = BQ_Settings.curWorldDir;
 		}
-		
+
 		// === CONFIG ===
-		
+
     	File f1 = new File(readDir, "QuestDatabase.json");
 		JsonObject j1 = new JsonObject();
-		
+
 		if(f1.exists())
 		{
 			j1 = JsonHelper.ReadFromFile(f1);
-			
+
 			if(rename)
 			{
 				JsonHelper.CopyPaste(f1, new File(readDir, "QuestDatabase_Legacy.json"));
@@ -309,17 +309,17 @@ public class EventHandler
 		} else
 		{
 			f1 = new File(BQ_Settings.defaultDir, "DefaultQuests.json");
-			
+
 			if(f1.exists())
 			{
 				j1 = JsonHelper.ReadFromFile(f1);
 			}
 		}
-		
+
 		String fVer = JsonHelper.GetString(j1, "format", "0.0.0");
-		
+
 		ILegacyLoader loader = LegacyLoaderRegistry.getLoader(fVer);
-		
+
 		if(loader == null)
 		{
 			QuestSettings.INSTANCE.readFromJson(JsonHelper.GetObject(j1, "questSettings"), EnumSaveType.CONFIG);
@@ -329,23 +329,23 @@ public class EventHandler
 		{
 			loader.readFromJson(j1, EnumSaveType.CONFIG);
 		}
-    	
+
 		// === PROGRESS ===
-		
+
     	File f2 = new File(readDir, "QuestProgress.json");
 		JsonObject j2 = new JsonObject();
-		
+
 		if(f2.exists())
 		{
 			j2 = JsonHelper.ReadFromFile(f2);
-			
+
 			if(rename)
 			{
 				JsonHelper.CopyPaste(f2, new File(readDir, "QuestDatabase_Legacy.json"));
 				f2.delete();
 			}
 		}
-		
+
 		if(loader == null)
 		{
 			QuestDatabase.INSTANCE.readFromJson(JsonHelper.GetArray(j2, "questProgress"), EnumSaveType.PROGRESS);
@@ -353,61 +353,61 @@ public class EventHandler
 		{
 			loader.readFromJson(j2, EnumSaveType.PROGRESS);
 		}
-		
+
 		// === PARTIES ===
-		
+
 	    File f3 = new File(BQ_Settings.curWorldDir, "QuestingParties.json");
 	    JsonObject j3 = new JsonObject();
-	    
+
 	    if(f3.exists())
 	    {
 	    	j3 = JsonHelper.ReadFromFile(f3);
 	    }
-	    
+
 	    PartyManager.INSTANCE.readFromJson(JsonHelper.GetArray(j3, "parties"), EnumSaveType.CONFIG);
-	    
+
 	    // === NAMES ===
-	    
+
 	    File f4 = new File(BQ_Settings.curWorldDir, "NameCache.json");
 	    JsonObject j4 = new JsonObject();
-	    
+
 	    if(f4.exists())
 	    {
 	    	j4 = JsonHelper.ReadFromFile(f4);
 	    }
-	    
+
 	    NameCache.INSTANCE.readFromJson(JsonHelper.GetArray(j4, "nameCache"), EnumSaveType.CONFIG);
-	    
+
 	    // === LIVES ===
-	    
+
 	    File f5 = new File(BQ_Settings.curWorldDir, "LifeDatabase.json");
 	    JsonObject j5 = new JsonObject();
-	    
+
 	    if(f5.exists())
 	    {
 	    	j5 = JsonHelper.ReadFromFile(f5);
 	    }
-	    
+
 	    LifeDatabase.INSTANCE.readFromJson(JsonHelper.GetObject(j5, "lifeDatabase"), EnumSaveType.CONFIG);
 	    LifeDatabase.INSTANCE.readFromJson(JsonHelper.GetObject(j5, "lifeDatabase"), EnumSaveType.PROGRESS);
-	    
+
 	    BetterQuesting.logger.log(Level.INFO, "Loaded " + QuestDatabase.INSTANCE.size() + " quests");
 	    BetterQuesting.logger.log(Level.INFO, "Loaded " + QuestLineDatabase.INSTANCE.size() + " quest lines");
 	    BetterQuesting.logger.log(Level.INFO, "Loaded " + PartyManager.INSTANCE.size() + " parties");
 	    BetterQuesting.logger.log(Level.INFO, "Loaded " + NameCache.INSTANCE.size() + " names");
-	    
+
 	    MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Load());
 	}
-	
+
 	@SubscribeEvent
 	public void onPlayerJoin(PlayerEvent.PlayerLoggedInEvent event)
 	{
 		if(!event.player.worldObj.isRemote && event.player instanceof EntityPlayerMP)
 		{
 			EntityPlayerMP mpPlayer = (EntityPlayerMP)event.player;
-			
+
 			NameCache.INSTANCE.updateNames(MinecraftServer.getServer());
-			
+
 			PacketSender.INSTANCE.sendToPlayer(QuestSettings.INSTANCE.getSyncPacket(), mpPlayer);
 			PacketSender.INSTANCE.sendToPlayer(QuestDatabase.INSTANCE.getSyncPacket(), mpPlayer);
 			PacketSender.INSTANCE.sendToPlayer(QuestLineDatabase.INSTANCE.getSyncPacket(), mpPlayer);
@@ -415,30 +415,41 @@ public class EventHandler
 			PacketSender.INSTANCE.sendToPlayer(PartyManager.INSTANCE.getSyncPacket(), mpPlayer);
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onPlayerRespawn(PlayerRespawnEvent event)
 	{
 		if(QuestSettings.INSTANCE.getProperty(NativeProps.HARDCORE) && event.player instanceof EntityPlayerMP && !((EntityPlayerMP)event.player).playerConqueredTheEnd)
 		{
 			EntityPlayerMP mpPlayer = (EntityPlayerMP)event.player;
-			
+
 			IParty party = PartyManager.INSTANCE.getUserParty(QuestingAPI.getQuestingUUID(mpPlayer));
 			int lives = (party == null || !party.getProperties().getProperty(NativeProps.PARTY_LIVES))? LifeDatabase.INSTANCE.getLives(QuestingAPI.getQuestingUUID(mpPlayer)) : LifeDatabase.INSTANCE.getLives(party);
-			
+
 			if(lives <= 0)
 			{
 				MinecraftServer server = MinecraftServer.getServer();
-				
+
 				if(server == null)
 				{
 					return;
 				}
-	            
+
 	            if (server.isSinglePlayer() && mpPlayer.getCommandSenderName().equals(server.getServerOwner()))
                 {
                     mpPlayer.playerNetServerHandler.kickPlayerFromServer("You have died. Game over, man, it\'s game over!");
-                    server.deleteWorldAndStopServer();
+	                File path = server.getEntityWorld().getSaveHandler().getWorldDirectory(),
+		                target = new File(path + "/../_gameover/" + server.getEntityWorld().getSaveHandler().getWorldDirectoryName());
+	                server.stopServer();
+	                if(target.exists()) {
+		                target.delete();
+	                }
+	                target.mkdir();
+                    try {
+                    	copyDirectory(path, target);
+                    } catch(IOException e) {
+                    	e.printStackTrace();
+                    }
                 }
                 else
                 {
@@ -458,7 +469,31 @@ public class EventHandler
 			}
 		}
 	}
-	
+
+	private void copyDirectory(final File sourceLocation, final File targetLocation) throws IOException {
+		if(sourceLocation.isDirectory()) {
+			if(!targetLocation.exists()) {
+				targetLocation.mkdir();
+			}
+			final String[] children = sourceLocation.list();
+			if(children != null) {
+				for(String child : children) {
+					copyDirectory(new File(sourceLocation, child), new File(targetLocation, child));
+				}
+			}
+		} else {
+			final InputStream in = new FileInputStream(sourceLocation);
+			final OutputStream out = new FileOutputStream(targetLocation);
+			final byte[] buf = new byte[1024];
+			int len;
+			while((len = in.read(buf)) > 0) {
+				out.write(buf, 0, len);
+			}
+			in.close();
+			out.close();
+		}
+	}
+
 	@SubscribeEvent
 	public void onLivingDeath(LivingDeathEvent event)
 	{
@@ -466,12 +501,12 @@ public class EventHandler
 		{
 			return;
 		}
-		
+
 		if(event.entityLiving instanceof EntityPlayer)
 		{
 			UUID uuid = QuestingAPI.getQuestingUUID(((EntityPlayer)event.entityLiving));
 			IParty party = PartyManager.INSTANCE.getUserParty(uuid);
-			
+
 			if(party == null || !party.getProperties().getProperty(NativeProps.PARTY_LIVES))
 			{
 				int lives = LifeDatabase.INSTANCE.getLives(uuid);
@@ -483,7 +518,7 @@ public class EventHandler
 			}
 		}
 	}
-	
+
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
 	public void onTextureStitch(TextureStitchEvent.Pre event)
@@ -494,24 +529,24 @@ public class EventHandler
 			FluidPlaceholder.fluidPlaceholder.setIcons(icon);
 		}
 	}
-	
+
 	@SubscribeEvent
 	@SideOnly(Side.CLIENT)
 	public void onDataUpdated(DatabaseEvent.Update event)
 	{
 		GuiScreen screen = Minecraft.getMinecraft().currentScreen;
-		
+
 		if(screen instanceof INeedsRefresh)
 		{
 			((INeedsRefresh)screen).refreshGui();
 		}
 	}
-	
+
 	@SubscribeEvent
 	public void onCommand(CommandEvent event)
 	{
 		MinecraftServer server = MinecraftServer.getServer();
-		
+
 		if(server != null && (event.command.getCommandName().equalsIgnoreCase("op") || event.command.getCommandName().equalsIgnoreCase("deop")))
 		{
 			NameCache.INSTANCE.updateNames(server);
