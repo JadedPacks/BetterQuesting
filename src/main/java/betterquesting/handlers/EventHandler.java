@@ -14,6 +14,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.management.UserListBansEntry;
 import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
 import net.minecraft.util.IIcon;
 import net.minecraftforge.client.event.TextureStitchEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -461,10 +462,14 @@ public class EventHandler
 			{
 				if(lives == 1)
 				{
-					mpPlayer.addChatComponentMessage(new ChatComponentText("This is your last life!"));
+					ChatComponentText cct = new ChatComponentText(EnumChatFormatting.RED + "This is your last life!");
+					cct.getChatStyle().setColor(EnumChatFormatting.RED).setBold(true);
+					mpPlayer.addChatComponentMessage(cct);
 				} else
 				{
-					mpPlayer.addChatComponentMessage(new ChatComponentText(lives + " lives remaining!"));
+					ChatComponentText cct = new ChatComponentText(lives + " lives remaining!");
+					cct.getChatStyle().setColor(EnumChatFormatting.RED).setBold(true);
+					mpPlayer.addChatComponentMessage(cct);
 				}
 			}
 		}
