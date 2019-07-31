@@ -1,18 +1,14 @@
 package betterquesting.api.client.themes;
 
-import net.minecraft.util.ResourceLocation;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.util.ResourceLocation;
 
 @SideOnly(Side.CLIENT)
-public interface ITheme
-{
-	public ResourceLocation getThemeID();
-	public String getDisplayName();
-	
-	public ResourceLocation getGuiTexture();
-	
-	public int getTextColor();
-	
-	public IThemeRenderer getRenderer();
+public interface ITheme {
+	ResourceLocation getThemeID();
+	String getDisplayName();
+	ResourceLocation getGuiTexture();
+	int getTextColor();
+	IThemeRenderer getRenderer();
 }

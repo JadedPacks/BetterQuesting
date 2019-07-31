@@ -1,21 +1,19 @@
 package betterquesting.api.storage;
 
-import java.util.UUID;
 import betterquesting.api.misc.IDataSync;
 import betterquesting.api.misc.IJsonSaveLoad;
 import betterquesting.api.questing.party.IParty;
 import com.google.gson.JsonObject;
 
-public interface ILifeDatabase extends IJsonSaveLoad<JsonObject>, IDataSync
-{
+import java.util.UUID;
+
+public interface ILifeDatabase extends IJsonSaveLoad<JsonObject>, IDataSync {
 	@Deprecated
-	public int getDefaultLives();
+	int getDefaultLives();
 	@Deprecated
-	public int getMaxLives();
-	
-	public int getLives(UUID uuid);
-	public void setLives(UUID uuid, int value);
-	
-	public int getLives(IParty party);
-	public void setLives(IParty party, int value);
+	int getMaxLives();
+	int getLives(UUID uuid);
+	void setLives(UUID uuid, int value);
+	int getLives(IParty party);
+	void setLives(IParty party, int value);
 }

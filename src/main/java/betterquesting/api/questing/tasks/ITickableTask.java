@@ -1,9 +1,8 @@
 package betterquesting.api.questing.tasks;
 
-import net.minecraft.entity.player.EntityPlayer;
 import betterquesting.api.questing.IQuest;
+import net.minecraft.entity.player.EntityPlayer;
 
-public interface ITickableTask
-{
-	public void updateTask(EntityPlayer player, IQuest quest);
+public interface ITickableTask {
+	void updateTask(EntityPlayer player, IQuest quest);
 }

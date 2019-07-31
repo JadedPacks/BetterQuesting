@@ -1,13 +1,5 @@
 package betterquesting.network.handlers;
 
-import java.util.UUID;
-import net.minecraft.entity.player.EntityPlayerMP;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.util.ChatComponentText;
-import net.minecraft.util.EnumChatFormatting;
-import net.minecraft.util.ResourceLocation;
-import org.apache.logging.log4j.Level;
 import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumSaveType;
@@ -23,114 +15,82 @@ import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestDatabase;
 import betterquesting.questing.QuestInstance;
 import com.google.gson.JsonObject;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ChatComponentText;
+import net.minecraft.util.EnumChatFormatting;
+import net.minecraft.util.ResourceLocation;
 
-public class PktHandlerQuestEdit implements IPacketHandler
-{
+import java.util.UUID;
+
+public class PktHandlerQuestEdit implements IPacketHandler {
 	@Override
-	public ResourceLocation getRegistryName()
-	{
+	public ResourceLocation getRegistryName() {
 		return PacketTypeNative.QUEST_EDIT.GetLocation();
 	}
-	
+
 	@Override
-	public void handleServer(NBTTagCompound data, EntityPlayerMP sender)
-	{
-		if(sender == null)
-		{
+	public void handleServer(NBTTagCompound data, EntityPlayerMP sender) {
+		if(sender == null) {
 			return;
 		}
-		
-		boolean isOP = MinecraftServer.getServer().getConfigurationManager().func_152596_g(sender.getGameProfile());
-		
-		if(!isOP)
-		{
-			BetterQuesting.logger.log(Level.WARN, "Player " + sender.getCommandSenderName() + " (UUID:" + QuestingAPI.getQuestingUUID(sender) + ") tried to edit quest without OP permissions!");
+		boolean isOP = MinecraftServer.getServer().getConfigurationManager().canSendCommands(sender.getGameProfile());
+		if(!isOP) {
+			BetterQuesting.logger.warn("Player " + sender.getCommandSenderName() + " (UUID:" + QuestingAPI.getQuestingUUID(sender) + ") tried to edit quest without OP permissions!");
 			sender.addChatComponentMessage(new ChatComponentText(EnumChatFormatting.RED + "You need to be OP to edit quests!"));
-			return; // Player is not operator. Do nothing
-		}
-		
-		int aID = !data.hasKey("action")? -1 : data.getInteger("action");
-		int qID = !data.hasKey("questID")? -1 : data.getInteger("questID");
-		IQuest quest = QuestDatabase.INSTANCE.getValue(qID);
-		
-		EnumPacketAction action = null;
-		
-		if(aID < 0 || aID >= EnumPacketAction.values().length)
-		{
 			return;
 		}
-		
+		int aID = !data.hasKey("action") ? -1 : data.getInteger("action");
+		int qID = !data.hasKey("questID") ? -1 : data.getInteger("questID");
+		IQuest quest = QuestDatabase.INSTANCE.getValue(qID);
+		EnumPacketAction action;
+		if(aID < 0 || aID >= EnumPacketAction.values().length) {
+			return;
+		}
 		action = EnumPacketAction.values()[aID];
-		
-		if(action == EnumPacketAction.EDIT && quest != null)
-		{
+		if(action == EnumPacketAction.EDIT && quest != null) {
 			quest.readPacket(data);
 			PacketSender.INSTANCE.sendToAll(quest.getSyncPacket());
-			return;
-		} else if(action == EnumPacketAction.REMOVE)
-		{
-			if(quest == null || qID < 0)
-			{
-				BetterQuesting.logger.log(Level.ERROR, sender.getCommandSenderName() + " tried to delete non-existent quest with ID:" + qID);
+		} else if(action == EnumPacketAction.REMOVE) {
+			if(quest == null || qID < 0) {
+				BetterQuesting.logger.error(sender.getCommandSenderName() + " tried to delete non-existent quest with ID:" + qID);
 				return;
 			}
-			
-			BetterQuesting.logger.log(Level.INFO, "Player " + sender.getCommandSenderName() + " deleted quest " + quest.getUnlocalisedName());
+			BetterQuesting.logger.info("Player " + sender.getCommandSenderName() + " deleted quest " + quest.getUnlocalisedName());
 			QuestDatabase.INSTANCE.removeKey(qID);
 			PacketSender.INSTANCE.sendToAll(QuestDatabase.INSTANCE.getSyncPacket());
-			return;
-		} else if(action == EnumPacketAction.SET && quest != null) // Force Complete/Reset
-		{
-			if(data.getBoolean("state"))
-			{
+		} else if(action == EnumPacketAction.SET && quest != null) {
+			if(data.getBoolean("state")) {
 				UUID senderID = QuestingAPI.getQuestingUUID(sender);
-				
 				quest.setComplete(senderID, 0);
-				
 				int done = 0;
-				
-				if(!quest.getProperties().getProperty(NativeProps.LOGIC_TASK).getResult(done, quest.getTasks().size())) // Preliminary check
-				{
-					for(ITask task : quest.getTasks().getAllValues())
-					{
+				if(!quest.getProperties().getProperty(NativeProps.LOGIC_TASK).getResult(done, quest.getTasks().size())) {
+					for(ITask task : quest.getTasks().getAllValues()) {
 						task.setComplete(senderID);
 						done += 1;
-						
-						if(quest.getProperties().getProperty(NativeProps.LOGIC_TASK).getResult(done, quest.getTasks().size()))
-						{
-							break; // Only complete enough quests to claim the reward
+						if(quest.getProperties().getProperty(NativeProps.LOGIC_TASK).getResult(done, quest.getTasks().size())) {
+							break;
 						}
 					}
 				}
-			} else
-			{
+			} else {
 				quest.resetAll(true);
 			}
-			
 			PacketSender.INSTANCE.sendToAll(quest.getSyncPacket());
-			return;
-		} else if(action == EnumPacketAction.ADD)
-		{
+		} else if(action == EnumPacketAction.ADD) {
 			IQuest nq = new QuestInstance();
 			int nID = QuestDatabase.INSTANCE.nextKey();
-			
-			if(data.hasKey("data") && data.hasKey("questID"))
-			{
+			if(data.hasKey("data") && data.hasKey("questID")) {
 				nID = data.getInteger("questID");
 				JsonObject base = NBTConverter.NBTtoJSON_Compound(data.getCompoundTag("data"), new JsonObject());
-				
 				nq.readFromJson(JsonHelper.GetObject(base, "config"), EnumSaveType.CONFIG);
 			}
-			
 			QuestDatabase.INSTANCE.add(nq, nID);
 			PacketSender.INSTANCE.sendToAll(nq.getSyncPacket());
-			return;
 		}
 	}
 
 	@Override
-	public void handleClient(NBTTagCompound data)
-	{
-		return;
-	}
+	public void handleClient(NBTTagCompound data) {}
 }

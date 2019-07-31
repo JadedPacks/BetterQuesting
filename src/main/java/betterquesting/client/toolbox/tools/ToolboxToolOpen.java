@@ -1,79 +1,60 @@
 package betterquesting.client.toolbox.tools;
 
-import net.minecraft.client.Minecraft;
 import betterquesting.api.client.gui.controls.GuiButtonQuestInstance;
 import betterquesting.api.client.gui.misc.IGuiQuestLine;
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.client.gui.GuiQuestInstance;
+import net.minecraft.client.Minecraft;
 
-public class ToolboxToolOpen implements IToolboxTool
-{
+public class ToolboxToolOpen implements IToolboxTool {
 	private IGuiQuestLine gui;
-	
-	public void initTool(IGuiQuestLine gui)
-	{
+
+	public void initTool(IGuiQuestLine gui) {
 		this.gui = gui;
 	}
 
 	@Override
-	public void disableTool()
-	{
-	}
-	
+	public void disableTool() {}
+
 	@Override
-	public void onMouseClick(int mx, int my, int click)
-	{
-		if(click != 0)
-		{
+	public void onMouseClick(int mx, int my, int click) {
+		if(click != 0) {
 			return;
 		}
-		
 		GuiButtonQuestInstance btn = gui.getQuestLine().getButtonAt(mx, my);
-		
-		if(btn != null)
-		{
+		if(btn != null) {
 			Minecraft mc = Minecraft.getMinecraft();
-			btn.func_146113_a(mc.getSoundHandler());
+			btn.playPressSound(mc.getSoundHandler());
 			mc.displayGuiScreen(new GuiQuestInstance(mc.currentScreen, btn.getQuest()));
 		}
 	}
 
 	@Override
-	public void drawTool(int mx, int my, float partialTick)
-	{
-	}
+	public void drawTool(int mx, int my, float partialTick) {}
 
 	@Override
-	public void onMouseScroll(int mx, int my, int scroll)
-	{
-	}
+	public void onMouseScroll(int mx, int my, int scroll) {}
 
 	@Override
-	public void onKeyPressed(char c, int key)
-	{
-	}
+	public void onKeyPressed(char c, int key) {}
 
 	@Override
-	public boolean allowTooltips()
-	{
+	public boolean allowTooltips() {
 		return true;
 	}
 
 	@Override
-	public boolean allowScrolling(int click)
-	{
+	public boolean allowScrolling(int click) {
 		return true;
 	}
 
 	@Override
-	public boolean allowZoom()
-	{
+	public boolean allowZoom() {
 		return true;
 	}
 
 	@Override
-	public boolean clampScrolling()
-	{
+	public boolean clampScrolling() {
 		return true;
 	}
 }

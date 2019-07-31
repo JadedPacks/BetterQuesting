@@ -2,8 +2,7 @@ package betterquesting.api.client.toolbox;
 
 import java.util.List;
 
-public interface IToolRegistry
-{
-	public void registerToolbox(IToolboxTab toolbox);
-	public List<IToolboxTab> getAllTools();
+public interface IToolRegistry {
+	void registerToolbox(IToolboxTab toolbox);
+	List<IToolboxTab> getAllTools();
 }

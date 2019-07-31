@@ -1,12 +1,8 @@
 package betterquesting.api.jdoc;
 
-public interface IJsonDoc
-{
-	public String getUnlocalisedTitle();
-	
-	public String getUnlocalisedName(String key);
-	public String getUnlocalisedDesc(String key);
-	
-	public IJsonDoc getParentDoc();
-	public IJsonDoc getChildDoc(String child);
+public interface IJsonDoc {
+	String getUnlocalisedTitle();
+	String getUnlocalisedName(String key);
+	String getUnlocalisedDesc(String key);
+	IJsonDoc getChildDoc(String child);
 }

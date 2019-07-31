@@ -6,48 +6,38 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
 
-public class EntityPlaceholder extends Entity
-{
-	EntityItem eItem;
+public class EntityPlaceholder extends Entity {
+	final EntityItem eItem;
 	NBTTagCompound original = new NBTTagCompound();
-	
-	public EntityPlaceholder(World world)
-	{
+
+	public EntityPlaceholder(World world) {
 		super(world);
 		eItem = new EntityItem(world);
 		eItem.setEntityItemStack(new ItemStack(ItemPlaceholder.placeholder));
 	}
-	
-	public EntityPlaceholder SetOriginalTags(NBTTagCompound tags)
-	{
+
+	public void SetOriginalTags(NBTTagCompound tags) {
 		this.original = tags;
-		return this;
 	}
-	
-	public NBTTagCompound GetOriginalTags()
-	{
+
+	public NBTTagCompound GetOriginalTags() {
 		return this.original;
 	}
-	
-	public EntityItem GetItemEntity()
-	{
+
+	public EntityItem GetItemEntity() {
 		return eItem;
 	}
-	
+
 	@Override
-	protected void entityInit()
-	{
-	}
-	
+	protected void entityInit() {}
+
 	@Override
-	protected void readEntityFromNBT(NBTTagCompound tags)
-	{
+	protected void readEntityFromNBT(NBTTagCompound tags) {
 		original = tags.getCompoundTag("original");
 	}
-	
+
 	@Override
-	protected void writeEntityToNBT(NBTTagCompound tags)
-	{
+	protected void writeEntityToNBT(NBTTagCompound tags) {
 		tags.setTag("original", this.original);
 	}
 }

@@ -2,8 +2,7 @@ package betterquesting.network;
 
 import net.minecraft.util.ResourceLocation;
 
-public enum PacketTypeNative
-{
+public enum PacketTypeNative {
 	QUEST_DATABASE,
 	PARTY_DATABASE,
 	LINE_DATABASE,
@@ -21,16 +20,14 @@ public enum PacketTypeNative
 	NOTIFICATION,
 	SETTINGS,
 	IMPORT;
-	
+
 	private final ResourceLocation ID;
-	
-	private PacketTypeNative()
-	{
+
+	PacketTypeNative() {
 		this.ID = new ResourceLocation("betterquesting:" + this.toString().toLowerCase());
 	}
-	
-	public ResourceLocation GetLocation()
-	{
+
+	public ResourceLocation GetLocation() {
 		return ID;
 	}
 }

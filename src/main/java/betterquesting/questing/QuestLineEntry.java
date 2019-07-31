@@ -5,85 +5,67 @@ import betterquesting.api.questing.IQuestLineEntry;
 import betterquesting.api.utils.JsonHelper;
 import com.google.gson.JsonObject;
 
-public class QuestLineEntry implements IQuestLineEntry
-{
-	private int size = 0;
-	private int posX = 0;
-	private int posY = 0;
-	
-	public QuestLineEntry(JsonObject json)
-	{
+public class QuestLineEntry implements IQuestLineEntry {
+	private int size = 0, posX = 0, posY = 0;
+
+	public QuestLineEntry(JsonObject json) {
 		this.readFromJson(json, EnumSaveType.CONFIG);
 	}
-	
-	public QuestLineEntry(int x, int y)
-	{
+
+	public QuestLineEntry(int x, int y) {
 		this(x, y, 24);
 	}
-	
-	public QuestLineEntry(int x, int y, int size)
-	{
+
+	public QuestLineEntry(int x, int y, int size) {
 		this.size = size;
 		this.posX = x;
 		this.posY = y;
 	}
-	
+
 	@Override
-	public int getSize()
-	{
+	public int getSize() {
 		return size;
 	}
-	
+
 	@Override
-	public int getPosX()
-	{
+	public int getPosX() {
 		return posX;
 	}
-	
+
 	@Override
-	public int getPosY()
-	{
+	public int getPosY() {
 		return posY;
 	}
-	
+
 	@Override
-	public void setPosition(int posX, int posY)
-	{
+	public void setPosition(int posX, int posY) {
 		this.posX = posX;
 		this.posY = posY;
 	}
-	
+
 	@Override
-	public void setSize(int size)
-	{
+	public void setSize(int size) {
 		this.size = size;
 	}
-	
+
 	@Override
-	public JsonObject writeToJson(JsonObject json, EnumSaveType saveType)
-	{
-		if(saveType != EnumSaveType.CONFIG)
-		{
+	public JsonObject writeToJson(JsonObject json, EnumSaveType saveType) {
+		if(saveType != EnumSaveType.CONFIG) {
 			return json;
 		}
-		
 		json.addProperty("size", size);
 		json.addProperty("x", posX);
 		json.addProperty("y", posY);
 		return json;
 	}
-	
+
 	@Override
-	public void readFromJson(JsonObject json, EnumSaveType saveType)
-	{
-		if(saveType != EnumSaveType.CONFIG)
-		{
+	public void readFromJson(JsonObject json, EnumSaveType saveType) {
+		if(saveType != EnumSaveType.CONFIG) {
 			return;
 		}
-		
 		size = JsonHelper.GetNumber(json, "size", 24).intValue();
 		posX = JsonHelper.GetNumber(json, "x", 0).intValue();
 		posY = JsonHelper.GetNumber(json, "y", 0).intValue();
 	}
-	
 }

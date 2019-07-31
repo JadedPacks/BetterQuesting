@@ -1,10 +1,9 @@
 package betterquesting.api.client.themes;
 
-import net.minecraft.util.ResourceLocation;
 import com.google.gson.JsonObject;
+import net.minecraft.util.ResourceLocation;
 
-public interface IThemeLoader
-{
-	public ResourceLocation getLoaderID();
-	public ITheme loadTheme(JsonObject json, String domain);
+public interface IThemeLoader {
+	ResourceLocation getLoaderID();
+	ITheme loadTheme(JsonObject json, String domain);
 }

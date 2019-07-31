@@ -1,37 +1,23 @@
 package betterquesting.api.client.gui.misc;
 
-import net.minecraft.util.ResourceLocation;
 import betterquesting.api.client.gui.QuestLineButtonTree;
 import betterquesting.api.client.toolbox.IToolboxTool;
+import net.minecraft.util.ResourceLocation;
 
-public interface IGuiQuestLine extends IGuiEmbedded
-{
-	public IToolboxTool getActiveTool();
-	public void setActiveTool(IToolboxTool tool);
-	
-	// Can be used to modify button positions without making permanent changes
-	public QuestLineButtonTree getQuestLine();
-	public void setQuestLine(QuestLineButtonTree line, boolean resetView);
-	
-	public void setBackground(ResourceLocation image, int size);
-	
-	public int getRelativeX(int mx);
-	public int getRelativeY(int my);
-	
-	public int getScreenX(int rx);
-	public int getScreenY(int ry);
-	
-	// These are mostly used in copySettings() but can be used for advanced
-	// tools which may need more contextual information
-	public int getZoom();
-	public int getScrollX();
-	public int getScrollY();
-	
-	public int getPosX();
-	public int getPosY();
-	
-	public int getWidth();
-	public int getHeight();
-	
-	public void copySettings(IGuiQuestLine gui);
+public interface IGuiQuestLine extends IGuiEmbedded {
+	IToolboxTool getActiveTool();
+	void setActiveTool(IToolboxTool tool);
+	QuestLineButtonTree getQuestLine();
+	void setQuestLine(QuestLineButtonTree line, boolean resetView);
+	void setBackground(ResourceLocation image, int size);
+	int getRelativeX(int mx);
+	int getRelativeY(int my);
+	int getZoom();
+	int getScrollX();
+	int getScrollY();
+	int getPosX();
+	int getPosY();
+	int getWidth();
+	int getHeight();
+	void copySettings(IGuiQuestLine gui);
 }

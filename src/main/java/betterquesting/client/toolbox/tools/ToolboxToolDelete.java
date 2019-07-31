@@ -1,6 +1,5 @@
 package betterquesting.client.toolbox.tools;
 
-import net.minecraft.nbt.NBTTagCompound;
 import betterquesting.api.client.gui.controls.GuiButtonQuestInstance;
 import betterquesting.api.client.gui.misc.IGuiQuestLine;
 import betterquesting.api.client.toolbox.IToolboxTool;
@@ -9,39 +8,29 @@ import betterquesting.api.network.QuestingPacket;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestDatabase;
+import net.minecraft.nbt.NBTTagCompound;
 
-public class ToolboxToolDelete implements IToolboxTool
-{
+public class ToolboxToolDelete implements IToolboxTool {
 	IGuiQuestLine gui;
-	
+
 	@Override
-	public void initTool(IGuiQuestLine gui)
-	{
+	public void initTool(IGuiQuestLine gui) {
 		this.gui = gui;
 	}
 
 	@Override
-	public void disableTool()
-	{
-	}
+	public void disableTool() {}
 
 	@Override
-	public void drawTool(int mx, int my, float partialTick)
-	{
-	}
-	
+	public void drawTool(int mx, int my, float partialTick) {}
+
 	@Override
-	public void onMouseClick(int mx, int my, int click)
-	{
-		if(click != 0)
-		{
+	public void onMouseClick(int mx, int my, int click) {
+		if(click != 0) {
 			return;
 		}
-		
 		GuiButtonQuestInstance btn = gui.getQuestLine().getButtonAt(mx, my);
-		
-		if(btn != null)
-		{
+		if(btn != null) {
 			NBTTagCompound tags = new NBTTagCompound();
 			tags.setInteger("action", EnumPacketAction.REMOVE.ordinal()); // Delete quest
 			tags.setInteger("questID", QuestDatabase.INSTANCE.getKey(btn.getQuest()));
@@ -50,36 +39,28 @@ public class ToolboxToolDelete implements IToolboxTool
 	}
 
 	@Override
-	public void onMouseScroll(int mx, int my, int scroll)
-	{
-	}
+	public void onMouseScroll(int mx, int my, int scroll) {}
 
 	@Override
-	public void onKeyPressed(char c, int key)
-	{
-	}
+	public void onKeyPressed(char c, int key) {}
 
 	@Override
-	public boolean allowTooltips()
-	{
+	public boolean allowTooltips() {
 		return true;
 	}
 
 	@Override
-	public boolean allowScrolling(int click)
-	{
+	public boolean allowScrolling(int click) {
 		return true;
 	}
 
 	@Override
-	public boolean allowZoom()
-	{
+	public boolean allowZoom() {
 		return true;
 	}
 
 	@Override
-	public boolean clampScrolling()
-	{
+	public boolean clampScrolling() {
 		return true;
 	}
 }

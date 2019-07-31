@@ -1,8 +1,5 @@
 package betterquesting.api.questing;
 
-import java.util.List;
-import java.util.UUID;
-import net.minecraft.entity.player.EntityPlayer;
 import betterquesting.api.enums.EnumQuestState;
 import betterquesting.api.misc.IDataSync;
 import betterquesting.api.misc.IJsonSaveLoad;
@@ -14,42 +11,32 @@ import betterquesting.api.utils.BigItemStack;
 import com.google.gson.JsonObject;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
+import net.minecraft.entity.player.EntityPlayer;
 
-public interface IQuest extends IJsonSaveLoad<JsonObject>, IDataSync
-{
-	public String getUnlocalisedName();
-	public String getUnlocalisedDescription();
-	
-	// Defaults to the API if not used
-	public void setParentDatabase(IQuestDatabase questDB);
-	
+import java.util.List;
+import java.util.UUID;
+
+public interface IQuest extends IJsonSaveLoad<JsonObject>, IDataSync {
+	String getUnlocalisedName();
+	String getUnlocalisedDescription();
+	void setParentDatabase(IQuestDatabase questDB);
 	@SideOnly(Side.CLIENT)
-	public List<String> getTooltip(EntityPlayer player);
-	
-	public BigItemStack getItemIcon();
-	
-	public IPropertyContainer getProperties();
-	
-	public EnumQuestState getState(UUID uuid);
-	
-	public void update(EntityPlayer player);
-	public void detect(EntityPlayer player);
-	
-	public boolean isUnlocked(UUID uuid);
-	public boolean canSubmit(EntityPlayer player);
-	
-	public boolean isComplete(UUID uuid);
-	public void setComplete(UUID uuid, long timeStamp);
-	
-	public boolean canClaim(EntityPlayer player);
-	public boolean hasClaimed(UUID uuid);
-	public void claimReward(EntityPlayer player);
-	
-	public void resetUser(UUID uuid, boolean fullReset);
-	public void resetAll(boolean fullReset);
-	
-	public IRegStorageBase<Integer,ITask> getTasks();
-	public IRegStorageBase<Integer,IReward> getRewards();
-	
-	public List<IQuest> getPrerequisites();
+	List<String> getTooltip(EntityPlayer player);
+	BigItemStack getItemIcon();
+	IPropertyContainer getProperties();
+	EnumQuestState getState(UUID uuid);
+	void update(EntityPlayer player);
+	void detect(EntityPlayer player);
+	boolean isUnlocked(UUID uuid);
+	boolean canSubmit(EntityPlayer player);
+	boolean isComplete(UUID uuid);
+	void setComplete(UUID uuid, long timeStamp);
+	boolean canClaim(EntityPlayer player);
+	boolean hasClaimed(UUID uuid);
+	void claimReward(EntityPlayer player);
+	void resetUser(UUID uuid, boolean fullReset);
+	void resetAll(boolean fullReset);
+	IRegStorageBase<Integer, ITask> getTasks();
+	IRegStorageBase<Integer, IReward> getRewards();
+	List<IQuest> getPrerequisites();
 }

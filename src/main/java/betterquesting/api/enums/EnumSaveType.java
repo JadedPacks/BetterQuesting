@@ -1,8 +1,7 @@
 package betterquesting.api.enums;
 
-public enum EnumSaveType
-{
+public enum EnumSaveType {
 	CONFIG,
 	PROGRESS,
-	OTHER;
+	OTHER
 }

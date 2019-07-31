@@ -1,7 +1,6 @@
 package betterquesting.api.enums;
 
-public enum EnumPartyStatus
-{
+public enum EnumPartyStatus {
 	INVITE,
 	MEMBER,
 	ADMIN,
