@@ -6,7 +6,6 @@ import betterquesting.api.client.gui.lists.GuiScrollingText;
 import betterquesting.api.client.gui.misc.IGuiEmbedded;
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.RenderUtils;
@@ -14,6 +13,7 @@ import betterquesting.client.gui.editors.GuiQuestEditor;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestInstance;
 import betterquesting.storage.QuestSettings;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -28,21 +28,21 @@ public class GuiQuestInstance extends GuiScreenThemed implements INeedsRefresh {
 	final int id;
 	int selTaskId = 0;
 	int selRewardId = 0;
-	IQuest quest;
+	QuestInstance quest;
 	ITask selTask = null;
 	IGuiEmbedded taskRender = null, rewardRender;
 	IReward selReward = null;
 	GuiButtonThemed btnTLeft, btnTRight, btnRLeft, btnRRight, btnClaim;
 
-	public GuiQuestInstance(GuiScreen parent, IQuest quest) {
-		super(parent, I18n.format(quest.getUnlocalisedName()));
+	public GuiQuestInstance(GuiScreen parent, QuestInstance quest) {
+		super(parent, I18n.format(quest.name));
 		this.quest = quest;
-		this.id = QuestDatabase.INSTANCE.getKey(quest);
+		this.id = QuestDatabase.getKey(quest);
 	}
 
 	@Override
 	public void refreshGui() {
-		IQuest tmp = QuestDatabase.INSTANCE.getValue(id);
+		QuestInstance tmp = QuestDatabase.getValue(id);
 		if(tmp == quest) {
 			return;
 		}
@@ -57,15 +57,15 @@ public class GuiQuestInstance extends GuiScreenThemed implements INeedsRefresh {
 	@Override
 	public void initGui() {
 		super.initGui();
-		if(QuestSettings.INSTANCE.canUserEdit(mc.thePlayer)) {
+		if(QuestSettings.canUserEdit(mc.thePlayer)) {
 			((GuiButton) this.buttonList.get(0)).xPosition = this.width / 2 - 100;
 			((GuiButton) this.buttonList.get(0)).width = 100;
 		}
 		GuiButtonThemed btnEdit = new GuiButtonThemed(4, this.width / 2, this.guiTop + this.sizeY - 16, 100, 20, I18n.format("betterquesting.btn.edit"), true);
-		btnEdit.enabled = btnEdit.visible = QuestSettings.INSTANCE.canUserEdit(mc.thePlayer);
+		btnEdit.enabled = btnEdit.visible = QuestSettings.canUserEdit(mc.thePlayer);
 		this.buttonList.add(btnEdit);
-		this.setTitle(I18n.format(quest.getUnlocalisedName()));
-		this.embedded.add(new GuiScrollingText(mc, this.guiLeft + 16, this.guiTop + 32, sizeX / 2 - 24, quest.getRewards().size() > 0 ? sizeY / 2 - 48 : sizeY - 64, I18n.format(quest.getUnlocalisedDescription())));
+		this.setTitle(I18n.format(quest.name));
+		this.embedded.add(new GuiScrollingText(mc, this.guiLeft + 16, this.guiTop + 32, sizeX / 2 - 24, quest.getRewards().size() > 0 ? sizeY / 2 - 48 : sizeY - 64, I18n.format(quest.desc)));
 		btnTLeft = new GuiButtonThemed(1, this.guiLeft + (sizeX / 4) * 3 - 70, this.guiTop + sizeY - 48, 20, 20, "<", true);
 		btnTLeft.enabled = selTaskId > 0;
 		btnTRight = new GuiButtonThemed(3, this.guiLeft + (sizeX / 4) * 3 + 50, this.guiTop + sizeY - 48, 20, 20, ">", true);
@@ -128,8 +128,8 @@ public class GuiQuestInstance extends GuiScreenThemed implements INeedsRefresh {
 			refreshEmbedded();
 		} else if(btn.id == 2) {
 			NBTTagCompound tags = new NBTTagCompound();
-			tags.setInteger("questID", QuestDatabase.INSTANCE.getKey(quest));
-			PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.DETECT.GetLocation(), tags));
+			tags.setInteger("questID", QuestDatabase.getKey(quest));
+			PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.DETECT.GetLocation(), tags));
 		} else if(btn.id == 3) {
 			selTaskId++;
 			btnTLeft.enabled = selTaskId > 0;
@@ -139,8 +139,8 @@ public class GuiQuestInstance extends GuiScreenThemed implements INeedsRefresh {
 			mc.displayGuiScreen(new GuiQuestEditor(this, quest));
 		} else if(btn.id == 5) {
 			NBTTagCompound tags = new NBTTagCompound();
-			tags.setInteger("questID", QuestDatabase.INSTANCE.getKey(quest));
-			PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.CLAIM.GetLocation(), tags));
+			tags.setInteger("questID", QuestDatabase.getKey(quest));
+			PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.CLAIM.GetLocation(), tags));
 		} else if(btn.id == 6) {
 			selRewardId--;
 			btnRLeft.enabled = selRewardId > 0;

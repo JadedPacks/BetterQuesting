@@ -1,9 +1,8 @@
 package betterquesting.commands;
 
-import betterquesting.api.questing.IQuest;
-import betterquesting.commands.QuestCommandBase;
 import betterquesting.network.PacketSender;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestInstance;
 import betterquesting.storage.NameCache;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -26,15 +25,15 @@ public class QuestCommandReset extends QuestCommandBase {
 	}
 
 	@Override
-	public List<String> autoComplete(ICommandSender sender, String[] args) {
+	public List<String> autoComplete(String[] args) {
 		ArrayList<String> list = new ArrayList<>();
 		if(args.length == 2) {
 			list.add("all");
-			for(int i : QuestDatabase.INSTANCE.getAllKeys()) {
+			for(int i : QuestDatabase.getAllKeys()) {
 				list.add("" + i);
 			}
 		} else if(args.length == 3) {
-			return CommandBase.getListOfStringsMatchingLastWord(args, NameCache.INSTANCE.getAllNames().toArray(new String[0]));
+			return getListOfStringsMatchingLastWord(args, NameCache.getAllNames().toArray(new String[0]));
 		}
 		return list;
 	}
@@ -54,9 +53,9 @@ public class QuestCommandReset extends QuestCommandBase {
 				throw this.getException(command);
 			}
 		}
-		String pName = uuid == null ? "NULL" : NameCache.INSTANCE.getName(uuid);
+		String pName = uuid == null ? "NULL" : NameCache.getName(uuid);
 		if(action.equalsIgnoreCase("all")) {
-			for(IQuest quest : QuestDatabase.INSTANCE.getAllValues()) {
+			for(QuestInstance quest : QuestDatabase.getAllValues()) {
 				if(uuid != null) {
 					quest.resetUser(uuid, true);
 				} else {
@@ -71,23 +70,23 @@ public class QuestCommandReset extends QuestCommandBase {
 		} else {
 			try {
 				int id = Integer.parseInt(action.trim());
-				IQuest quest = QuestDatabase.INSTANCE.getValue(id);
+				QuestInstance quest = QuestDatabase.getValue(id);
 				if(uuid != null) {
 					quest.resetUser(uuid, true);
-					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.reset.player_single", new ChatComponentTranslation(quest.getUnlocalisedName()), pName));
+					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.reset.player_single", new ChatComponentTranslation(quest.name), pName));
 				} else {
 					quest.resetAll(true);
-					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.reset.all_single", new ChatComponentTranslation(quest.getUnlocalisedName())));
+					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.reset.all_single", new ChatComponentTranslation(quest.name)));
 				}
 			} catch(Exception e) {
 				throw getException(command);
 			}
 		}
-		PacketSender.INSTANCE.sendToAll(QuestDatabase.INSTANCE.getSyncPacket());
+		PacketSender.sendToAll(QuestDatabase.getSyncPacket());
 	}
 
 	@Override
-	public boolean isArgUsername(String[] args, int index) {
+	public boolean isArgUsername(int index) {
 		return index == 2;
 	}
 }

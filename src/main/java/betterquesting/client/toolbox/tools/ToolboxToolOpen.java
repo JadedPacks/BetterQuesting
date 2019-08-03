@@ -30,13 +30,7 @@ public class ToolboxToolOpen implements IToolboxTool {
 	}
 
 	@Override
-	public void drawTool(int mx, int my, float partialTick) {}
-
-	@Override
-	public void onMouseScroll(int mx, int my, int scroll) {}
-
-	@Override
-	public void onKeyPressed(char c, int key) {}
+	public void drawTool(int mx, int my) {}
 
 	@Override
 	public boolean allowTooltips() {
@@ -45,11 +39,6 @@ public class ToolboxToolOpen implements IToolboxTool {
 
 	@Override
 	public boolean allowScrolling(int click) {
-		return true;
-	}
-
-	@Override
-	public boolean allowZoom() {
 		return true;
 	}
 

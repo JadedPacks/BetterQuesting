@@ -1,18 +1,7 @@
 package betterquesting.questing;
 
-import betterquesting.api.api.ApiReference;
-import betterquesting.api.api.QuestingAPI;
-import betterquesting.api.enums.EnumLogic;
-import betterquesting.api.enums.EnumPartyStatus;
-import betterquesting.api.enums.EnumQuestState;
-import betterquesting.api.enums.EnumSaveType;
+import betterquesting.api.enums.*;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.properties.IPropertyContainer;
-import betterquesting.api.properties.IPropertyType;
-import betterquesting.api.properties.NativeProps;
-import betterquesting.api.questing.IQuest;
-import betterquesting.api.questing.IQuestDatabase;
-import betterquesting.api.questing.party.IParty;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.questing.tasks.IProgression;
 import betterquesting.api.questing.tasks.ITask;
@@ -24,10 +13,11 @@ import betterquesting.core.BetterQuesting;
 import betterquesting.misc.UserEntry;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
+import betterquesting.questing.party.PartyInstance;
 import betterquesting.questing.party.PartyManager;
 import betterquesting.questing.rewards.RewardStorage;
 import betterquesting.questing.tasks.TaskStorage;
-import betterquesting.storage.PropertyContainer;
+import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -50,120 +40,45 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public class QuestInstance implements IQuest {
+public class QuestInstance {
+	// TODO: Global setting
+	public final boolean partyLoot = false;
+	public EnumLogic logicQuest = EnumLogic.AND, logicTask = EnumLogic.AND;
+	public EnumQuestVisibility visibility = EnumQuestVisibility.NORMAL;
+	public String name = "New Quest", desc = "No Description";
+	public BigItemStack icon = new BigItemStack(Items.nether_star);
+	public int repeat = -1;
 	private final TaskStorage tasks = new TaskStorage();
 	private final RewardStorage rewards = new RewardStorage();
 	private final ArrayList<UserEntry> completeUsers = new ArrayList<>();
-	private final ArrayList<IQuest> preRequisites = new ArrayList<>();
-	private final PropertyContainer qInfo = new PropertyContainer();
-	private IQuestDatabase parentDB;
+	private final ArrayList<QuestInstance> preRequisites = new ArrayList<>();
 
-	public QuestInstance() {
-		parentDB = QuestingAPI.getAPI(ApiReference.QUEST_DB);
-		this.setupProps();
-	}
-
-	private void setupProps() {
-		setupValue(NativeProps.NAME, "New Quest");
-		setupValue(NativeProps.DESC, "No Description");
-		setupValue(NativeProps.ICON, new BigItemStack(Items.nether_star));
-		setupValue(NativeProps.SOUND_COMPLETE);
-		setupValue(NativeProps.SOUND_UPDATE);
-		setupValue(NativeProps.LOGIC_QUEST, EnumLogic.AND);
-		setupValue(NativeProps.LOGIC_TASK, EnumLogic.AND);
-		setupValue(NativeProps.REPEAT_TIME, -1);
-		setupValue(NativeProps.LOCKED_PROGRESS, false);
-		setupValue(NativeProps.AUTO_CLAIM, false);
-		setupValue(NativeProps.SILENT, false);
-		setupValue(NativeProps.MAIN, false);
-		// TODO: Make a global setting
-		setupValue(NativeProps.PARTY_LOOT, false);
-		setupValue(NativeProps.GLOBAL_SHARE, false);
-		setupValue(NativeProps.SIMULTANEOUS, false);
-	}
-
-	private <T> void setupValue(IPropertyType<T> prop) {
-		this.setupValue(prop, prop.getDefault());
-	}
-
-	private <T> void setupValue(IPropertyType<T> prop, T def) {
-		qInfo.setProperty(prop, qInfo.getProperty(prop, def));
-	}
-
-	@Override
-	public void setParentDatabase(IQuestDatabase questDB) {
-		this.parentDB = questDB;
-	}
-
-	@Override
-	public String getUnlocalisedName() {
-		String def = "New Quest";
-		if(!qInfo.hasProperty(NativeProps.NAME)) {
-			qInfo.setProperty(NativeProps.NAME, def);
-			return def;
-		}
-		return qInfo.getProperty(NativeProps.NAME, def);
-	}
-
-	@Override
-	public String getUnlocalisedDescription() {
-		String def = "No Description";
-		if(!qInfo.hasProperty(NativeProps.DESC)) {
-			qInfo.setProperty(NativeProps.DESC, def);
-			return def;
-		}
-		return qInfo.getProperty(NativeProps.DESC, def);
-	}
-
-	@Override
-	public BigItemStack getItemIcon() {
-		BigItemStack def = new BigItemStack(Items.nether_star);
-		if(!qInfo.hasProperty(NativeProps.ICON)) {
-			qInfo.setProperty(NativeProps.ICON, def);
-			return def;
-		}
-		return qInfo.getProperty(NativeProps.ICON, def);
-	}
-
-	@Override
-	public IPropertyContainer getProperties() {
-		return qInfo;
-	}
-
-	@Override
 	public void update(EntityPlayer player) {
-		UUID playerID = QuestingAPI.getQuestingUUID(player);
+		UUID playerID = NameCache.getQuestingUUID(player);
 		if(isComplete(playerID)) {
 			UserEntry entry = GetUserEntry(playerID);
 			if(!hasClaimed(playerID)) {
 				if(canClaim(player)) {
-					if(qInfo.getProperty(NativeProps.AUTO_CLAIM) && player.ticksExisted % 20 == 0) {
-						claimReward(player);
-					}
 					return;
-				} else if(qInfo.getProperty(NativeProps.REPEAT_TIME).intValue() < 0 || rewards.size() <= 0) {
+				} else if(repeat < 0 || rewards.size() <= 0) {
 					return;
 				}
-			} else if(rewards.size() > 0 && qInfo.getProperty(NativeProps.REPEAT_TIME).intValue() >= 0 && player.worldObj.getTotalWorldTime() - entry.getTimestamp() >= qInfo.getProperty(NativeProps.REPEAT_TIME).intValue()) {
-				if(qInfo.getProperty(NativeProps.GLOBAL)) {
-					resetAll(false);
-				} else {
-					resetUser(playerID, false);
-				}
-				if(!QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE) && !qInfo.getProperty(NativeProps.SILENT)) {
+			} else if(rewards.size() > 0 && repeat >= 0 && player.worldObj.getTotalWorldTime() - entry.getTimestamp() >= repeat) {
+				resetUser(playerID, false);
+				if(!QuestSettings.edit) {
 					postPresetNotice(player, 1);
 				}
-				PacketSender.INSTANCE.sendToAll(getSyncPacket());
+				PacketSender.sendToAll(getSyncPacket());
 				return;
 			} else {
 				return;
 			}
 		}
-		if(isUnlocked(playerID) || qInfo.getProperty(NativeProps.LOCKED_PROGRESS)) {
+		if(isUnlocked(playerID)) {
 			int done = 0;
 			for(ITask tsk : tasks.getAllValues()) {
 				if(tsk.isComplete(playerID)) {
-					IParty party = PartyManager.INSTANCE.getUserParty(playerID);
+					PartyInstance party = PartyManager.getUserParty(playerID);
 					if(party != null) {
 						for(UUID mem : party.getMembers()) {
 							tsk.setComplete(mem);
@@ -175,35 +90,31 @@ public class QuestInstance implements IQuest {
 			if(!isUnlocked(playerID)) {
 				return;
 			}
-			if((tasks.size() > 0 || !QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) && qInfo.getProperty(NativeProps.LOGIC_TASK).getResult(done, tasks.size())) {
+			if((tasks.size() > 0 || !QuestSettings.edit) && logicTask.getResult(done, tasks.size())) {
 				setComplete(playerID, player.worldObj.getTotalWorldTime());
-				PacketSender.INSTANCE.sendToAll(getSyncPacket());
-				if(!QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE) && !qInfo.getProperty(NativeProps.SILENT)) {
+				PacketSender.sendToAll(getSyncPacket());
+				if(!QuestSettings.edit) {
 					postPresetNotice(player, 2);
 				}
-			} else if(done > 0 && qInfo.getProperty(NativeProps.SIMULTANEOUS)) {
-				resetUser(playerID, false);
-				PacketSender.INSTANCE.sendToAll(getSyncPacket());
 			}
 		}
 	}
 
-	@Override
 	public void detect(EntityPlayer player) {
-		UUID playerID = QuestingAPI.getQuestingUUID(player);
-		if(isComplete(playerID) && (qInfo.getProperty(NativeProps.REPEAT_TIME).intValue() < 0 || rewards.size() <= 0)) {
+		UUID playerID = NameCache.getQuestingUUID(player);
+		if(isComplete(playerID) && (repeat < 0 || rewards.size() <= 0)) {
 			return;
 		} else if(!canSubmit(player)) {
 			return;
 		}
-		if(isUnlocked(playerID) || QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) {
+		if(isUnlocked(playerID) || QuestSettings.edit) {
 			int done = 0;
 			boolean update = false;
 			for(ITask tsk : tasks.getAllValues()) {
 				if(!tsk.isComplete(playerID)) {
 					tsk.detect(player, this);
 					if(tsk.isComplete(playerID)) {
-						IParty party = PartyManager.INSTANCE.getUserParty(playerID);
+						PartyInstance party = PartyManager.getUserParty(playerID);
 						if(party != null) {
 							for(UUID mem : party.getMembers()) {
 								tsk.setComplete(mem);
@@ -216,33 +127,30 @@ public class QuestInstance implements IQuest {
 					done += 1;
 				}
 			}
-			if((tasks.size() > 0 || !QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE)) && qInfo.getProperty(NativeProps.LOGIC_TASK).getResult(done, tasks.size())) {
+			if((tasks.size() > 0 || !QuestSettings.edit) && logicTask.getResult(done, tasks.size())) {
 				setComplete(playerID, player.worldObj.getTotalWorldTime());
-				if(!QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE) && !qInfo.getProperty(NativeProps.SILENT)) {
+				if(!QuestSettings.edit) {
 					postPresetNotice(player, 2);
 				}
-			} else if(update && qInfo.getProperty(NativeProps.SIMULTANEOUS)) {
-				resetUser(playerID, false);
-				PacketSender.INSTANCE.sendToAll(getSyncPacket());
 			} else if(update) {
-				if(!QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE) && !qInfo.getProperty(NativeProps.SILENT)) {
+				if(!QuestSettings.edit) {
 					postPresetNotice(player, 1);
 				}
 			}
-			PacketSender.INSTANCE.sendToAll(getSyncPacket());
+			PacketSender.sendToAll(getSyncPacket());
 		}
 	}
 
 	public void postPresetNotice(EntityPlayer player, int preset) {
 		switch(preset) {
 			case 0:
-				postNotice(player, "betterquesting.notice.unlock", getUnlocalisedName(), qInfo.getProperty(NativeProps.SOUND_UNLOCK), getItemIcon());
+				postNotice(player, "betterquesting.notice.unlock", name, "random.click", icon);
 				break;
 			case 1:
-				postNotice(player, "betterquesting.notice.update", getUnlocalisedName(), qInfo.getProperty(NativeProps.SOUND_UPDATE), getItemIcon());
+				postNotice(player, "betterquesting.notice.update", name, "random.levelup", icon);
 				break;
 			case 2:
-				postNotice(player, "betterquesting.notice.complete", getUnlocalisedName(), qInfo.getProperty(NativeProps.SOUND_COMPLETE), getItemIcon());
+				postNotice(player, "betterquesting.notice.complete", name, "random.levelup", icon);
 				break;
 		}
 	}
@@ -254,29 +162,27 @@ public class QuestInstance implements IQuest {
 		tags.setString("Sound", sound);
 		tags.setTag("Icon", icon.writeToNBT(new NBTTagCompound()));
 		QuestingPacket payload = new QuestingPacket(PacketTypeNative.NOTIFICATION.GetLocation(), tags);
-		if(qInfo.getProperty(NativeProps.GLOBAL)) {
-			PacketSender.INSTANCE.sendToAll(payload);
-		} else if(player instanceof EntityPlayerMP) {
+		if(player instanceof EntityPlayerMP) {
 			List<EntityPlayerMP> tarList = getPartyPlayers((EntityPlayerMP) player);
-
 			for(EntityPlayerMP p : tarList) {
-				PacketSender.INSTANCE.sendToPlayer(payload, p);
+				PacketSender.sendToPlayer(payload, p);
 			}
 		}
 	}
 
 	private List<EntityPlayerMP> getPartyPlayers(EntityPlayerMP player) {
 		List<EntityPlayerMP> list = new ArrayList<>();
-		IParty party = PartyManager.INSTANCE.getUserParty(QuestingAPI.getQuestingUUID(player));
+		PartyInstance party = PartyManager.getUserParty(NameCache.getQuestingUUID(player));
 		if(party == null) {
 			list.add(player);
 			return list;
 		} else {
 			MinecraftServer server = FMLCommonHandler.instance().getMinecraftServerInstance();
 			for(UUID mem : party.getMembers()) {
-				for(EntityPlayerMP p : (List<EntityPlayerMP>) server.getConfigurationManager().playerEntityList) {
-					if(p != null && QuestingAPI.getQuestingUUID(p).equals(mem)) {
-						list.add(p);
+				for(Object p : server.getConfigurationManager().playerEntityList) {
+					EntityPlayerMP pl = (EntityPlayerMP) p;
+					if(pl != null && NameCache.getQuestingUUID(pl).equals(mem)) {
+						list.add(pl);
 					}
 				}
 			}
@@ -284,22 +190,9 @@ public class QuestInstance implements IQuest {
 		}
 	}
 
-	@Override
 	public boolean hasClaimed(UUID uuid) {
 		if(rewards.size() <= 0) {
 			return true;
-		}
-		if(qInfo.getProperty(NativeProps.GLOBAL)) {
-			if(GetParticipation(uuid) < qInfo.getProperty(NativeProps.PARTICIPATION).floatValue()) {
-				return true;
-			} else if(!qInfo.getProperty(NativeProps.GLOBAL_SHARE)) {
-				for(UserEntry entry : completeUsers) {
-					if(entry.hasClaimed()) {
-						return true;
-					}
-				}
-				return false;
-			}
 		}
 		UserEntry entry = GetUserEntry(uuid);
 		if(entry == null) {
@@ -308,10 +201,9 @@ public class QuestInstance implements IQuest {
 		return entry.hasClaimed();
 	}
 
-	@Override
 	public boolean canClaim(EntityPlayer player) {
-		UserEntry entry = GetUserEntry(QuestingAPI.getQuestingUUID(player));
-		if(entry == null || hasClaimed(QuestingAPI.getQuestingUUID(player))) {
+		UserEntry entry = GetUserEntry(NameCache.getQuestingUUID(player));
+		if(entry == null || hasClaimed(NameCache.getQuestingUUID(player))) {
 			return false;
 		} else if(canSubmit(player)) {
 			return false;
@@ -325,14 +217,13 @@ public class QuestInstance implements IQuest {
 		return true;
 	}
 
-	@Override
 	public void claimReward(EntityPlayer player) {
 		for(IReward rew : rewards.getAllValues()) {
 			rew.claimReward(player, this);
 		}
-		UUID pID = QuestingAPI.getQuestingUUID(player);
-		IParty party = PartyManager.INSTANCE.getUserParty(pID);
-		if(party != null && this.qInfo.getProperty(NativeProps.PARTY_LOOT)) {
+		UUID pID = NameCache.getQuestingUUID(player);
+		PartyInstance party = PartyManager.getUserParty(pID);
+		if(party != null && partyLoot) {
 			for(UUID mem : party.getMembers()) {
 				EnumPartyStatus pStat = party.getStatus(mem);
 				if(pStat == null || pStat == EnumPartyStatus.INVITE) {
@@ -353,26 +244,25 @@ public class QuestInstance implements IQuest {
 			}
 			entry.setClaimed(true, player.worldObj.getTotalWorldTime());
 		}
-		PacketSender.INSTANCE.sendToAll(getSyncPacket());
+		PacketSender.sendToAll(getSyncPacket());
 	}
 
-	@Override
 	public boolean canSubmit(EntityPlayer player) {
 		if(player == null) {
 			return false;
 		}
-		UUID playerID = QuestingAPI.getQuestingUUID(player);
+		UUID playerID = NameCache.getQuestingUUID(player);
 		UserEntry entry = this.GetUserEntry(playerID);
 		if(entry == null) {
 			return true;
-		} else if(!entry.hasClaimed() && getProperties().getProperty(NativeProps.REPEAT_TIME).intValue() >= 0) {
+		} else if(!entry.hasClaimed() && repeat >= 0) {
 			int done = 0;
 			for(ITask tsk : tasks.getAllValues()) {
 				if(tsk.isComplete(playerID)) {
 					done += 1;
 				}
 			}
-			return !qInfo.getProperty(NativeProps.LOGIC_TASK).getResult(done, tasks.size());
+			return !logicTask.getResult(done, tasks.size());
 		} else {
 			return false;
 		}
@@ -391,7 +281,6 @@ public class QuestInstance implements IQuest {
 		return total / tasks.size();
 	}
 
-	@Override
 	public List<String> getTooltip(EntityPlayer player) {
 		if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
 			return this.getAdvancedTooltip();
@@ -403,13 +292,13 @@ public class QuestInstance implements IQuest {
 	@SideOnly(Side.CLIENT)
 	private List<String> getStandardTooltip(EntityPlayer player) {
 		ArrayList<String> list = new ArrayList<>();
-		list.add(StatCollector.translateToLocalFormatted(getUnlocalisedName()));
-		UUID playerID = QuestingAPI.getQuestingUUID(player);
+		list.add(StatCollector.translateToLocalFormatted(name));
+		UUID playerID = NameCache.getQuestingUUID(player);
 		if(isComplete(playerID)) {
 			list.add(EnumChatFormatting.GREEN + StatCollector.translateToLocalFormatted("betterquesting.tooltip.complete"));
 			if(!hasClaimed(playerID)) {
 				list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.rewards_pending"));
-			} else if(qInfo.getProperty(NativeProps.REPEAT_TIME).intValue() > 0) {
+			} else if(repeat > 0) {
 				long time = getRepeatSeconds(player);
 				DecimalFormat df = new DecimalFormat("00");
 				String timeTxt = "";
@@ -422,10 +311,10 @@ public class QuestInstance implements IQuest {
 				list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.repeat", timeTxt));
 			}
 		} else if(!isUnlocked(playerID)) {
-			list.add(EnumChatFormatting.RED + "" + EnumChatFormatting.UNDERLINE + StatCollector.translateToLocalFormatted("betterquesting.tooltip.requires") + " (" + qInfo.getProperty(NativeProps.LOGIC_QUEST).toString().toUpperCase() + ")");
-			for(IQuest req : preRequisites) {
+			list.add(EnumChatFormatting.RED + "" + EnumChatFormatting.UNDERLINE + StatCollector.translateToLocalFormatted("betterquesting.tooltip.requires") + " (" + logicQuest.toString().toUpperCase() + ")");
+			for(QuestInstance req : preRequisites) {
 				if(!req.isComplete(playerID)) {
-					list.add(EnumChatFormatting.RED + "- " + StatCollector.translateToLocalFormatted(req.getUnlocalisedName()));
+					list.add(EnumChatFormatting.RED + "- " + StatCollector.translateToLocalFormatted(req.name));
 				}
 			}
 		} else {
@@ -444,17 +333,10 @@ public class QuestInstance implements IQuest {
 	@SideOnly(Side.CLIENT)
 	private List<String> getAdvancedTooltip() {
 		ArrayList<String> list = new ArrayList<>();
-		list.add(StatCollector.translateToLocalFormatted(getUnlocalisedName()) + " #" + parentDB.getKey(this));
-		list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.main_quest", qInfo.getProperty(NativeProps.MAIN)));
-		list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.global_quest", qInfo.getProperty(NativeProps.GLOBAL)));
-		if(qInfo.getProperty(NativeProps.GLOBAL)) {
-			list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.global_share", qInfo.getProperty(NativeProps.GLOBAL_SHARE)));
-		}
-		list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.task_logic", qInfo.getProperty(NativeProps.LOGIC_QUEST).toString().toUpperCase()));
-		list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.simultaneous", qInfo.getProperty(NativeProps.SIMULTANEOUS)));
-		list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.auto_claim", qInfo.getProperty(NativeProps.AUTO_CLAIM)));
-		if(qInfo.getProperty(NativeProps.REPEAT_TIME).intValue() >= 0) {
-			long time = qInfo.getProperty(NativeProps.REPEAT_TIME).intValue() / 20;
+		list.add(StatCollector.translateToLocalFormatted(name) + " #" + QuestDatabase.getKey(this));
+		list.add(EnumChatFormatting.GRAY + StatCollector.translateToLocalFormatted("betterquesting.tooltip.task_logic", logicQuest.toString().toUpperCase()));
+		if(repeat >= 0) {
+			long time = repeat / 20;
 			DecimalFormat df = new DecimalFormat("00");
 			String timeTxt = "";
 			if(time >= 3600) {
@@ -472,29 +354,27 @@ public class QuestInstance implements IQuest {
 
 	@SideOnly(Side.CLIENT)
 	public long getRepeatSeconds(EntityPlayer player) {
-		if(qInfo.getProperty(NativeProps.REPEAT_TIME).intValue() < 0) {
+		if(repeat < 0) {
 			return -1;
 		}
-		UserEntry ue = GetUserEntry(QuestingAPI.getQuestingUUID(player));
+		UserEntry ue = GetUserEntry(NameCache.getQuestingUUID(player));
 		if(ue == null) {
 			return 0;
 		} else {
-			return (qInfo.getProperty(NativeProps.REPEAT_TIME).intValue() - (player.worldObj.getTotalWorldTime() - ue.getTimestamp())) / 20L;
+			return (repeat - (player.worldObj.getTotalWorldTime() - ue.getTimestamp())) / 20L;
 		}
 	}
 
-	@Override
 	public QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject base = new JsonObject();
 		base.add("config", writeToJson(new JsonObject(), EnumSaveType.CONFIG));
 		base.add("progress", writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
-		tags.setInteger("questID", parentDB.getKey(this));
+		tags.setInteger("questID", QuestDatabase.getKey(this));
 		return new QuestingPacket(PacketTypeNative.QUEST_SYNC.GetLocation(), tags);
 	}
 
-	@Override
 	public void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
 		readFromJson(JsonHelper.GetObject(base, "config"), EnumSaveType.CONFIG);
@@ -507,17 +387,16 @@ public class QuestInstance implements IQuest {
 		if(B <= 0) {
 			return true;
 		}
-		for(IQuest quest : preRequisites) {
+		for(QuestInstance quest : preRequisites) {
 			if(quest != null && quest.isComplete(uuid)) {
 				A++;
 			}
 		}
-		return qInfo.getProperty(NativeProps.LOGIC_QUEST).getResult(A, B);
+		return logicQuest.getResult(A, B);
 	}
 
-	@Override
 	public void setComplete(UUID uuid, long timestamp) {
-		IParty party = PartyManager.INSTANCE.getUserParty(uuid);
+		PartyInstance party = PartyManager.getUserParty(uuid);
 		if(party == null) {
 			UserEntry entry = this.GetUserEntry(uuid);
 			if(entry != null) {
@@ -537,13 +416,8 @@ public class QuestInstance implements IQuest {
 		}
 	}
 
-	@Override
 	public boolean isComplete(UUID uuid) {
-		if(qInfo.getProperty(NativeProps.GLOBAL)) {
-			return completeUsers.size() > 0;
-		} else {
-			return GetUserEntry(uuid) != null;
-		}
+		return GetUserEntry(uuid) != null;
 	}
 
 	private void RemoveUserEntry(UUID... uuid) {
@@ -559,11 +433,10 @@ public class QuestInstance implements IQuest {
 			}
 		}
 		if(flag) {
-			PacketSender.INSTANCE.sendToAll(getSyncPacket());
+			PacketSender.sendToAll(getSyncPacket());
 		}
 	}
 
-	@Override
 	public EnumQuestState getState(UUID uuid) {
 		if(this.isComplete(uuid)) {
 			if(this.hasClaimed(uuid)) {
@@ -586,7 +459,6 @@ public class QuestInstance implements IQuest {
 		return null;
 	}
 
-	@Override
 	public void resetUser(UUID uuid, boolean fullReset) {
 		if(fullReset) {
 			this.RemoveUserEntry(uuid);
@@ -601,7 +473,6 @@ public class QuestInstance implements IQuest {
 		}
 	}
 
-	@Override
 	public void resetAll(boolean fullReset) {
 		if(fullReset) {
 			completeUsers.clear();
@@ -615,22 +486,18 @@ public class QuestInstance implements IQuest {
 		}
 	}
 
-	@Override
 	public IRegStorageBase<Integer, ITask> getTasks() {
 		return tasks;
 	}
 
-	@Override
 	public IRegStorageBase<Integer, IReward> getRewards() {
 		return rewards;
 	}
 
-	@Override
-	public List<IQuest> getPrerequisites() {
+	public List<QuestInstance> getPrerequisites() {
 		return preRequisites;
 	}
 
-	@Override
 	public JsonObject writeToJson(JsonObject json, EnumSaveType saveType) {
 		switch(saveType) {
 			case CONFIG:
@@ -645,7 +512,6 @@ public class QuestInstance implements IQuest {
 		return json;
 	}
 
-	@Override
 	public void readFromJson(JsonObject json, EnumSaveType saveType) {
 		switch(saveType) {
 			case CONFIG:
@@ -659,28 +525,50 @@ public class QuestInstance implements IQuest {
 		}
 	}
 
-	private void writeToJson_Config(JsonObject jObj) {
-		jObj.add("properties", qInfo.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
-		jObj.add("tasks", tasks.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-		jObj.add("rewards", rewards.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-
+	private void writeToJson_Config(JsonObject json) {
+		JsonObject jObj = new JsonObject();
+		jObj.addProperty("name", name);
+		jObj.addProperty("desc", desc);
+		jObj.add("icon", JsonHelper.ItemStackToJson(icon, new JsonObject()));
+		if(logicQuest != EnumLogic.AND) {
+			jObj.add("logicQuest", new JsonPrimitive(logicQuest.toString()));
+		}
+		if(logicTask != EnumLogic.AND) {
+			jObj.add("logicTask", new JsonPrimitive(logicTask.toString()));
+		}
+		if(visibility != EnumQuestVisibility.NORMAL) {
+			jObj.add("visibility", new JsonPrimitive(visibility.toString()));
+		}
+		if(repeat != -1) {
+			jObj.addProperty("repeat", repeat);
+		}
+		json.add("properties", jObj);
+		json.add("tasks", tasks.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+		json.add("rewards", rewards.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
 		JsonArray reqJson = new JsonArray();
-		for(IQuest quest : preRequisites) {
-			int prID = parentDB.getKey(quest);
+		for(QuestInstance quest : preRequisites) {
+			int prID = QuestDatabase.getKey(quest);
 
 			if(prID >= 0) {
 				reqJson.add(new JsonPrimitive(prID));
 			}
 		}
-		jObj.add("preRequisites", reqJson);
+		json.add("preRequisites", reqJson);
 	}
 
-	private void readFromJson_Config(JsonObject jObj) {
-		this.qInfo.readFromJson(JsonHelper.GetObject(jObj, "properties"), EnumSaveType.CONFIG);
-		this.tasks.readFromJson(JsonHelper.GetArray(jObj, "tasks"), EnumSaveType.CONFIG);
-		this.rewards.readFromJson(JsonHelper.GetArray(jObj, "rewards"), EnumSaveType.CONFIG);
+	private void readFromJson_Config(JsonObject json) {
+		JsonObject jObj = JsonHelper.GetObject(json, "properties");
+		name = JsonHelper.GetString(jObj, "name", "New Quest");
+		desc = JsonHelper.GetString(jObj, "desc", "No Description");
+		repeat = JsonHelper.GetInt(jObj, "repeat", -1);
+		icon = JsonHelper.JsonToItemStack(JsonHelper.GetObject(jObj, "icon"));
+		logicQuest = JsonHelper.GetEnum(jObj, "logicQuest", EnumLogic.AND);
+		logicTask = JsonHelper.GetEnum(jObj, "logicTask", EnumLogic.AND);
+		visibility = JsonHelper.GetEnum(jObj, "visibility", EnumQuestVisibility.NORMAL);
+		this.tasks.readFromJson(JsonHelper.GetArray(json, "tasks"), EnumSaveType.CONFIG);
+		this.rewards.readFromJson(JsonHelper.GetArray(json, "rewards"), EnumSaveType.CONFIG);
 		preRequisites.clear();
-		for(JsonElement entry : JsonHelper.GetArray(jObj, "preRequisites")) {
+		for(JsonElement entry : JsonHelper.GetArray(json, "preRequisites")) {
 			if(entry == null || !entry.isJsonPrimitive() || !entry.getAsJsonPrimitive().isNumber()) {
 				continue;
 			}
@@ -688,14 +576,13 @@ public class QuestInstance implements IQuest {
 			if(prID < 0) {
 				continue;
 			}
-			IQuest tmp = parentDB.getValue(prID);
+			QuestInstance tmp = QuestDatabase.getValue(prID);
 			if(tmp == null) {
-				tmp = parentDB.createNew();
-				parentDB.add(tmp, prID);
+				tmp = QuestDatabase.createNew();
+				QuestDatabase.add(tmp, prID);
 			}
 			preRequisites.add(tmp);
 		}
-		this.setupProps();
 	}
 
 	private void writeToJson_Progress(JsonObject json) {

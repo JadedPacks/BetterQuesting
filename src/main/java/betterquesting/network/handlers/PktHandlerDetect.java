@@ -1,9 +1,9 @@
 package betterquesting.network.handlers;
 
 import betterquesting.api.network.IPacketHandler;
-import betterquesting.api.questing.IQuest;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestInstance;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
@@ -19,7 +19,7 @@ public class PktHandlerDetect implements IPacketHandler {
 		if(sender == null) {
 			return;
 		}
-		IQuest quest = QuestDatabase.INSTANCE.getValue(data.getInteger("questID"));
+		QuestInstance quest = QuestDatabase.getValue(data.getInteger("questID"));
 		if(quest != null) {
 			quest.detect(sender);
 		}

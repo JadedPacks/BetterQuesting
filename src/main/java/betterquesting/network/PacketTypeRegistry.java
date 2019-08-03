@@ -1,15 +1,13 @@
 package betterquesting.network;
 
 import betterquesting.api.network.IPacketHandler;
-import betterquesting.api.network.IPacketRegistry;
 import betterquesting.network.handlers.*;
 import net.minecraft.util.ResourceLocation;
 
 import java.util.HashMap;
 
-public class PacketTypeRegistry implements IPacketRegistry {
-	public static final PacketTypeRegistry INSTANCE = new PacketTypeRegistry();
-	private final HashMap<ResourceLocation, IPacketHandler> pktHandlers = new HashMap<>();
+public class PacketTypeRegistry {
+	private static final HashMap<ResourceLocation, IPacketHandler> pktHandlers = new HashMap<>();
 
 	private PacketTypeRegistry() {
 		registerHandler(new PktHandlerQuestDB());
@@ -26,12 +24,10 @@ public class PacketTypeRegistry implements IPacketRegistry {
 		registerHandler(new PktHandlerLives());
 		registerHandler(new PktHandlerNotification());
 		registerHandler(new PktHandlerNameCache());
-		registerHandler(new PktHandlerImport());
 		registerHandler(new PktHandlerSettings());
 	}
 
-	@Override
-	public void registerHandler(IPacketHandler handler) {
+	private void registerHandler(IPacketHandler handler) {
 		if(handler == null) {
 			throw new NullPointerException("Tried to register null packet handler");
 		} else if(handler.getRegistryName() == null) {
@@ -42,8 +38,7 @@ public class PacketTypeRegistry implements IPacketRegistry {
 		pktHandlers.put(handler.getRegistryName(), handler);
 	}
 
-	@Override
-	public IPacketHandler getPacketHandler(ResourceLocation name) {
+	public static IPacketHandler getPacketHandler(ResourceLocation name) {
 		return pktHandlers.get(name);
 	}
 }

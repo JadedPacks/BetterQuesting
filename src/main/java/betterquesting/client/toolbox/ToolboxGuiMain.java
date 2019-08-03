@@ -7,6 +7,7 @@ import betterquesting.api.client.gui.misc.IGuiEmbedded;
 import betterquesting.api.client.gui.misc.IGuiQuestLine;
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.client.toolbox.tools.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.EnumChatFormatting;
@@ -20,41 +21,41 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 	private final ArrayList<GuiButtonThemed> list = new ArrayList<>();
 	private static int dragSnap = 2;
 	private static final int[] snaps = new int[] {1, 4, 6, 8, 12, 24};
-	private final GuiButtonThemed btnOpen;
-	private final GuiButtonThemed btnNew;
-	private final GuiButtonThemed btnGrab;
-	private final GuiButtonThemed btnSnap;
-	private final GuiButtonThemed btnLink;
-	private final GuiButtonThemed btnCopy;
-	private final GuiButtonThemed btnRem;
-	private final GuiButtonThemed btnDel;
-	private final GuiButtonThemed btnCom;
-	private final GuiButtonThemed btnRes;
-	private final GuiButtonThemed btnIco;
-	private final GuiButtonThemed btnSca;
-	private final GuiButtonThemed btnRaw;
+	private final GuiButtonThemed btnOpen, btnNew, btnGrab, btnSnap, btnLink, btnCopy, btnRem, btnDel, btnCom, btnRes, btnIco, btnSca;
+	private final IToolboxTool toolOpen, toolNew, toolGrab, toolLink, toolCopy, toolRem, toolDel, toolCom, toolRes, toolIco, toolSca;
 	private final GuiScrollingButtons btnList;
 
 	public ToolboxGuiMain(IGuiQuestLine gui, int posX, int posY, int sizeX, int sizeY) {
 		this.gui = gui;
+		toolOpen = new ToolboxToolOpen();
+		toolNew = new ToolboxToolNew();
+		toolGrab = new ToolboxToolGrab();
+		toolLink = new ToolboxToolLink();
+		toolCopy = new ToolboxToolCopy();
+		toolRem = new ToolboxToolRemove();
+		toolDel = new ToolboxToolDelete();
+		toolCom = new ToolboxToolComplete();
+		toolRes = new ToolboxToolReset();
+		toolIco = new ToolboxToolIcon();
+		toolSca = new ToolboxToolScale();
 		IToolboxTool curTool = gui.getActiveTool();
 		btnList = new GuiScrollingButtons(Minecraft.getMinecraft(), posX, posY, sizeX, sizeY);
 		btnOpen = new GuiButtonThemed(0, posX + 8, posY + 8, (sizeX - 8) / 2, 20, "", false);
 		btnOpen.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 112, 0, 16, 16, true);
 		setButtonTooltip(btnOpen, I18n.format("betterquesting.toolbox.tool.open.name"), I18n.format("betterquesting.toolbox.tool.open.desc"));
 		list.add(btnOpen);
-		btnOpen.enabled = curTool != ToolboxTabMain.instance.toolOpen;
+		btnOpen.enabled = curTool != toolOpen;
 		btnNew = new GuiButtonThemed(1, posX + 36, posY + 8, (sizeX - 8) / 2, 20, "", false);
 		btnNew.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 48, 16, 16, 16, true);
 		setButtonTooltip(btnNew, I18n.format("betterquesting.toolbox.tool.new.name"), I18n.format("betterquesting.toolbox.tool.new.desc"));
 		list.add(btnNew);
-		btnNew.enabled = curTool != ToolboxTabMain.instance.toolNew;
+		btnNew.enabled = curTool != toolNew;
 		btnList.addButtonRow(btnOpen, btnNew);
 		btnGrab = new GuiButtonThemed(2, posX + 8, posY + 36, (sizeX - 8) / 2, 20, "", false);
 		btnGrab.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 48, 0, 16, 16, true);
 		setButtonTooltip(btnGrab, I18n.format("betterquesting.toolbox.tool.grab.name"), I18n.format("betterquesting.toolbox.tool.grab.desc"));
 		list.add(btnGrab);
-		btnGrab.enabled = curTool != ToolboxTabMain.instance.toolGrab;
+		btnGrab.enabled = curTool != toolGrab;
 		btnSnap = new GuiButtonThemed(2, posX + 36, posY + 36, (sizeX - 8) / 2, 20, EnumChatFormatting.BLACK.toString() + dragSnap, false);
 		btnSnap.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 64, 0, 16, 16, true);
 		setButtonTooltip(btnSnap, I18n.format("betterquesting.toolbox.tool.snap.name"), I18n.format("betterquesting.toolbox.tool.snap.desc"));
@@ -64,53 +65,48 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 		btnLink.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 80, 0, 16, 16, true);
 		setButtonTooltip(btnLink, I18n.format("betterquesting.toolbox.tool.link.name"), I18n.format("betterquesting.toolbox.tool.link.desc"));
 		list.add(btnLink);
-		btnLink.enabled = curTool != ToolboxTabMain.instance.toolLink;
+		btnLink.enabled = curTool != toolLink;
 		btnCopy = new GuiButtonThemed(2, posX + 36, posY + 64, (sizeX - 8) / 2, 20, "", false);
 		btnCopy.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 32, 0, 16, 16, true);
 		setButtonTooltip(btnCopy, I18n.format("betterquesting.toolbox.tool.copy.name"), I18n.format("betterquesting.toolbox.tool.copy.desc"));
 		list.add(btnCopy);
-		btnCopy.enabled = curTool != ToolboxTabMain.instance.toolCopy;
+		btnCopy.enabled = curTool != toolCopy;
 		btnList.addButtonRow(btnLink, btnCopy);
 		btnRem = new GuiButtonThemed(2, posX + 8, posY + 92, (sizeX - 8) / 2, 20, "", false);
 		btnRem.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 112, 16, 16, 16, true);
 		setButtonTooltip(btnRem, I18n.format("betterquesting.toolbox.tool.remove.name"), I18n.format("betterquesting.toolbox.tool.remove.desc"));
 		list.add(btnRem);
-		btnRem.enabled = curTool != ToolboxTabMain.instance.toolRem;
+		btnRem.enabled = curTool != toolRem;
 		btnDel = new GuiButtonThemed(2, posX + 36, posY + 92, (sizeX - 8) / 2, 20, "", false);
 		btnDel.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 16, 0, 16, 16, true);
 		setButtonTooltip(btnDel, I18n.format("betterquesting.toolbox.tool.delete.name"), I18n.format("betterquesting.toolbox.tool.delete.desc"));
 		list.add(btnDel);
-		btnDel.enabled = curTool != ToolboxTabMain.instance.toolDel;
+		btnDel.enabled = curTool != toolDel;
 		btnList.addButtonRow(btnRem, btnDel);
 		btnCom = new GuiButtonThemed(2, posX + 8, posY + 120, (sizeX - 8) / 2, 20, "", false);
 		btnCom.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 128, 0, 16, 16, true);
 		setButtonTooltip(btnCom, I18n.format("betterquesting.toolbox.tool.complete.name"), I18n.format("betterquesting.toolbox.tool.complete.desc"));
 		list.add(btnCom);
-		btnCom.enabled = curTool != ToolboxTabMain.instance.toolCom;
+		btnCom.enabled = curTool != toolCom;
 		btnRes = new GuiButtonThemed(2, posX + 36, posY + 120, (sizeX - 8) / 2, 20, "", false);
 		btnRes.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 128, 16, 16, 16, true);
 		setButtonTooltip(btnRes, I18n.format("betterquesting.toolbox.tool.reset.name"), I18n.format("betterquesting.toolbox.tool.reset.desc"));
 		list.add(btnRes);
-		btnRes.enabled = curTool != ToolboxTabMain.instance.toolRes;
+		btnRes.enabled = curTool != toolRes;
 		btnList.addButtonRow(btnCom, btnRes);
 		btnIco = new GuiButtonThemed(2, posX + 8, posY + 148, (sizeX - 8) / 2, 20, "", false);
 		btnIco.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 144, 0, 16, 16, true);
 		setButtonTooltip(btnIco, I18n.format("betterquesting.toolbox.tool.icon.name"), I18n.format("betterquesting.toolbox.tool.icon.desc"));
 		list.add(btnIco);
-		btnIco.enabled = curTool != ToolboxTabMain.instance.toolIco;
+		btnIco.enabled = curTool != toolIco;
 		btnSca = new GuiButtonThemed(2, posX + 36, posY + 148, (sizeX - 8) / 2, 20, "", false);
 		btnSca.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 144, 16, 16, 16, true);
 		setButtonTooltip(btnSca, I18n.format("betterquesting.toolbox.tool.scale.name"), I18n.format("betterquesting.toolbox.tool.scale.desc"));
 		list.add(btnSca);
-		btnSca.enabled = curTool != ToolboxTabMain.instance.toolSca;
+		btnSca.enabled = curTool != toolSca;
 		btnList.addButtonRow(btnIco, btnSca);
-		btnRaw = new GuiButtonThemed(2, posX + 8, posY + 172, (sizeX - 8) / 2, 20, "", false);
-		btnRaw.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 0, 0, 16, 16, true);
-		setButtonTooltip(btnRaw, I18n.format("betterquesting.toolbox.tool.raw.name"), I18n.format("betterquesting.toolbox.tool.raw.desc"));
-		list.add(btnRaw);
-		btnList.addButtonRow(btnRaw);
 		if(gui.getActiveTool() == null) {
-			gui.setActiveTool(ToolboxTabMain.instance.toolOpen);
+			gui.setActiveTool(toolOpen);
 			resetButtons();
 			btnOpen.enabled = false;
 		}
@@ -172,7 +168,7 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 			resetButtons();
 			btnOpen.playPressSound(btnOpen.mc.getSoundHandler());
 			btnOpen.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolOpen);
+			gui.setActiveTool(toolOpen);
 		} else if(btnSnap.mousePressed(btnSnap.mc, mx, my)) {
 			btnSnap.playPressSound(btnSnap.mc.getSoundHandler());
 			toggleSnap();
@@ -181,56 +177,52 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 			resetButtons();
 			btnGrab.playPressSound(btnGrab.mc.getSoundHandler());
 			btnGrab.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolGrab);
+			gui.setActiveTool(toolGrab);
 		} else if(btnNew.mousePressed(btnNew.mc, mx, my)) {
 			resetButtons();
 			btnNew.playPressSound(btnNew.mc.getSoundHandler());
 			btnNew.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolNew);
+			gui.setActiveTool(toolNew);
 		} else if(btnCopy.mousePressed(btnCopy.mc, mx, my)) {
 			resetButtons();
 			btnCopy.playPressSound(btnCopy.mc.getSoundHandler());
 			btnCopy.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolCopy);
+			gui.setActiveTool(toolCopy);
 		} else if(btnLink.mousePressed(btnLink.mc, mx, my)) {
 			resetButtons();
 			btnLink.playPressSound(btnLink.mc.getSoundHandler());
 			btnLink.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolLink);
+			gui.setActiveTool(toolLink);
 		} else if(btnDel.mousePressed(btnDel.mc, mx, my)) {
 			resetButtons();
 			btnDel.playPressSound(btnDel.mc.getSoundHandler());
 			btnDel.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolDel);
+			gui.setActiveTool(toolDel);
 		} else if(btnRem.mousePressed(btnRem.mc, mx, my)) {
 			resetButtons();
 			btnRem.playPressSound(btnRem.mc.getSoundHandler());
 			btnRem.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolRem);
+			gui.setActiveTool(toolRem);
 		} else if(btnCom.mousePressed(btnCom.mc, mx, my)) {
 			resetButtons();
 			btnCom.playPressSound(btnCom.mc.getSoundHandler());
 			btnCom.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolCom);
+			gui.setActiveTool(toolCom);
 		} else if(btnRes.mousePressed(btnRes.mc, mx, my)) {
 			resetButtons();
 			btnRes.playPressSound(btnRes.mc.getSoundHandler());
 			btnRes.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolRes);
+			gui.setActiveTool(toolRes);
 		} else if(btnIco.mousePressed(btnIco.mc, mx, my)) {
 			resetButtons();
 			btnIco.playPressSound(btnIco.mc.getSoundHandler());
 			btnIco.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolIco);
+			gui.setActiveTool(toolIco);
 		} else if(btnSca.mousePressed(btnSca.mc, mx, my)) {
 			resetButtons();
 			btnSca.playPressSound(btnSca.mc.getSoundHandler());
 			btnSca.enabled = false;
-			gui.setActiveTool(ToolboxTabMain.instance.toolSca);
-		} else if(btnRaw.mousePressed(btnRaw.mc, mx, my)) {
-			Minecraft mc = Minecraft.getMinecraft();
-			btnRaw.playPressSound(btnRaw.mc.getSoundHandler());
-			mc.displayGuiScreen(new GuiQuestLineEditProxy(mc.currentScreen, this.gui.getQuestLine().getQuestLine()));
+			gui.setActiveTool(toolSca);
 		}
 	}
 
@@ -238,9 +230,6 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 	public void onMouseScroll(int mx, int my, int scroll) {
 		btnList.onMouseScroll(mx, my, scroll);
 	}
-
-	@Override
-	public void onKeyTyped(char c, int keyCode) {}
 
 	@SuppressWarnings("unchecked")
 	private void setButtonTooltip(GuiButtonThemed btn, String title, String desc) {

@@ -23,7 +23,6 @@ import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.awt.*;
-import java.util.ArrayList;
 
 @SideOnly(Side.CLIENT)
 public class GuiJsonAdd extends GuiScreenThemed implements IVolatileScreen {
@@ -161,12 +160,7 @@ public class GuiJsonAdd extends GuiScreenThemed implements IVolatileScreen {
 					if(json.isJsonObject()) {
 						json.getAsJsonObject().add(keyText.getText(), newObj);
 					} else if(json.isJsonArray()) {
-						ArrayList<JsonElement> list = JsonHelper.GetUnderlyingArray(json.getAsJsonArray());
-						if(list != null) {
-							list.add(insertIdx, newObj);
-						} else {
-							return;
-						}
+						JsonHelper.GetUnderlyingArray(json.getAsJsonArray()).add(insertIdx, newObj);
 					}
 				} else {
 					return;

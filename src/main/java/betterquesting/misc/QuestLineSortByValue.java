@@ -1,19 +1,13 @@
 package betterquesting.misc;
 
-import betterquesting.api.questing.IQuestLine;
-import betterquesting.api.questing.IQuestLineDatabase;
+import betterquesting.questing.QuestLine;
+import betterquesting.questing.QuestLineDatabase;
 
 import java.util.Comparator;
 
-public class QuestLineSortByValue implements Comparator<IQuestLine> {
-	private final IQuestLineDatabase parentDB;
-
-	public QuestLineSortByValue(IQuestLineDatabase parentDB) {
-		this.parentDB = parentDB;
-	}
-
+public class QuestLineSortByValue implements Comparator<QuestLine> {
 	@Override
-	public int compare(IQuestLine ql1, IQuestLine ql2) {
-		return (int) Math.signum(parentDB.getOrderIndex(ql1 == null ? -1 : parentDB.getKey(ql1)) - parentDB.getOrderIndex(ql2 == null ? -1 : parentDB.getKey(ql2)));
+	public int compare(QuestLine ql1, QuestLine ql2) {
+		return (int) Math.signum(QuestLineDatabase.getOrderIndex(ql1 == null ? -1 : QuestLineDatabase.getKey(ql1)) - QuestLineDatabase.getOrderIndex(ql2 == null ? -1 : QuestLineDatabase.getKey(ql2)));
 	}
 }

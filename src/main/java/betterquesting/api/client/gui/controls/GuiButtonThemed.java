@@ -1,9 +1,6 @@
 package betterquesting.api.client.gui.controls;
 
-import betterquesting.api.api.ApiReference;
-import betterquesting.api.api.QuestingAPI;
-import betterquesting.api.client.themes.ITheme;
-import betterquesting.api.placeholders.ThemeDummy;
+import betterquesting.client.themes.ThemeStandard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.PositionedSoundRecord;
 import net.minecraft.client.audio.SoundHandler;
@@ -62,7 +59,7 @@ public class GuiButtonThemed extends GuiButton {
 	public void drawButton(Minecraft mc, int mx, int my) {
 		if(this.visible) {
 			FontRenderer fontrenderer = mc.fontRendererObj;
-			mc.getTextureManager().bindTexture(this.currentTheme().getGuiTexture());
+			mc.getTextureManager().bindTexture(ThemeStandard.getGuiTexture());
 			GL11.glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 			this.hovered = mx >= this.xPosition && my >= this.yPosition && mx < this.xPosition + this.width && my < this.yPosition + this.height;
 			int k = this.getHoverState(this.hovered);
@@ -125,13 +122,5 @@ public class GuiButtonThemed extends GuiButton {
 	@Override
 	public void playPressSound(SoundHandler p_146113_1_) {
 		p_146113_1_.playSound(PositionedSoundRecord.createPositionedSoundRecord(new ResourceLocation("gui.button.press"), 1.0F));
-	}
-
-	public ITheme currentTheme() {
-		if(QuestingAPI.getAPI(ApiReference.THEME_REG) != null) {
-			return QuestingAPI.getAPI(ApiReference.THEME_REG).getCurrentTheme();
-		} else {
-			return ThemeDummy.INSTANCE;
-		}
 	}
 }

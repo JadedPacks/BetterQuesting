@@ -1,14 +1,15 @@
 package betterquesting.network.handlers;
 
-import betterquesting.api.events.DatabaseEvent;
+import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.network.IPacketHandler;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestDatabase;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
 
 public class PktHandlerQuestDB implements IPacketHandler {
 	@Override
@@ -21,12 +22,15 @@ public class PktHandlerQuestDB implements IPacketHandler {
 		if(sender == null) {
 			return;
 		}
-		PacketSender.INSTANCE.sendToPlayer(QuestDatabase.INSTANCE.getSyncPacket(), sender);
+		PacketSender.sendToPlayer(QuestDatabase.getSyncPacket(), sender);
 	}
 
 	@Override
 	public void handleClient(NBTTagCompound data) {
-		QuestDatabase.INSTANCE.readPacket(data);
-		MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update());
+		QuestDatabase.readPacket(data);
+		GuiScreen screen = Minecraft.getMinecraft().currentScreen;
+		if(screen instanceof INeedsRefresh) {
+			((INeedsRefresh) screen).refreshGui();
+		}
 	}
 }

@@ -1,8 +1,7 @@
 package betterquesting.api.client.gui.controls;
 
-import betterquesting.api.api.ApiReference;
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.misc.ICallback;
+import betterquesting.client.gui.editors.GuiTextEditor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiTextField;
@@ -39,7 +38,9 @@ public class GuiBigTextField extends GuiTextField {
 
 		if(bigEdit != null && bigEdit.mousePressed(mc, mx, my)) {
 			bigEdit.playPressSound(mc.getSoundHandler());
-			QuestingAPI.getAPI(ApiReference.GUI_HELPER).openTextEditor(mc.currentScreen, host, getText());
+			GuiTextEditor gui = new GuiTextEditor(mc.currentScreen, getText());
+			gui.setHost(host);
+			mc.displayGuiScreen(gui);
 		} else {
 			super.mouseClicked(mx, my, p_146192_3_);
 		}
@@ -58,10 +59,10 @@ public class GuiBigTextField extends GuiTextField {
 			my = mc.currentScreen.height - Mouse.getEventY() * mc.currentScreen.height / mc.displayHeight - 1;
 		}
 
-		this.drawTextBox(mx, my, 1F);
+		this.drawTextBox(mx, my);
 	}
 
-	public void drawTextBox(int mx, int my, float partialTick) {
+	public void drawTextBox(int mx, int my) {
 		if(bigEdit != null) {
 			bigEdit.xPosition = this.xPosition + width + 1;
 			bigEdit.yPosition = this.yPosition - 1;

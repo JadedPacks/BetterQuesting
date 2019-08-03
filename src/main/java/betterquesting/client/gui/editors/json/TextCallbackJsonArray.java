@@ -20,7 +20,7 @@ public class TextCallbackJsonArray implements ICallback<String> {
 	@Override
 	public void setValue(String text) {
 		ArrayList<JsonElement> list = JsonHelper.GetUnderlyingArray(json);
-		if(list == null || index < 0 || index >= list.size()) {
+		if(index < 0 || index >= list.size()) {
 			return;
 		}
 		list.set(index, new JsonPrimitive(text));

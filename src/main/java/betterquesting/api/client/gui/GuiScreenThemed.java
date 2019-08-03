@@ -1,12 +1,9 @@
 package betterquesting.api.client.gui;
 
-import betterquesting.api.api.ApiReference;
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.client.gui.controls.GuiButtonThemed;
 import betterquesting.api.client.gui.misc.IGuiEmbedded;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
-import betterquesting.api.client.themes.ITheme;
-import betterquesting.api.placeholders.ThemeDummy;
+import betterquesting.client.themes.ThemeStandard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.GuiButton;
@@ -57,7 +54,7 @@ public class GuiScreenThemed extends GuiScreen implements GuiYesNoCallback {
 
 	public void drawBackPanel(int mx, int my, float partialTick) {
 		this.drawDefaultBackground();
-		currentTheme().getRenderer().drawThemedPanel(guiLeft, guiTop, sizeX, sizeY);
+		ThemeStandard.drawThemedPanel(guiLeft, guiTop, sizeX, sizeY);
 		String tmp = I18n.format(title);
 		this.fontRendererObj.drawString(EnumChatFormatting.BOLD + tmp, this.guiLeft + (sizeX / 2) - this.fontRendererObj.getStringWidth(tmp) / 2, this.guiTop + 18, getTextColor(), false);
 		GL11.glColor4f(1F, 1F, 1F, 1F);
@@ -84,7 +81,7 @@ public class GuiScreenThemed extends GuiScreen implements GuiYesNoCallback {
 			GL11.glColor4f(1F, 1F, 1F, 1F);
 			GL11.glPopMatrix();
 		}
-		this.mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+		this.mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 		GL11.glColor4f(1F, 1F, 1F, 1F);
 	}
 
@@ -132,9 +129,6 @@ public class GuiScreenThemed extends GuiScreen implements GuiYesNoCallback {
 				this.mc.setIngameFocus();
 			}
 		}
-		for(IGuiEmbedded gui : embedded) {
-			gui.onKeyTyped(character, keyCode);
-		}
 	}
 
 	@Override
@@ -147,16 +141,8 @@ public class GuiScreenThemed extends GuiScreen implements GuiYesNoCallback {
 		}
 	}
 
-	public ITheme currentTheme() {
-		if(QuestingAPI.getAPI(ApiReference.THEME_REG) != null) {
-			return QuestingAPI.getAPI(ApiReference.THEME_REG).getCurrentTheme();
-		} else {
-			return ThemeDummy.INSTANCE;
-		}
-	}
-
 	public int getTextColor() {
-		return currentTheme().getTextColor();
+		return ThemeStandard.getTextColor();
 	}
 
 	public void drawTooltip(List<String> list, int x, int y) {

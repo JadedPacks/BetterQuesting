@@ -9,13 +9,13 @@ import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.misc.IFactory;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestInstance;
 import betterquesting.questing.rewards.RewardRegistry;
 import com.google.gson.JsonObject;
 import com.mojang.realmsclient.gui.ChatFormatting;
@@ -33,20 +33,20 @@ import java.util.List;
 public class GuiRewardEditor extends GuiScreenThemed implements IVolatileScreen, INeedsRefresh {
 	private List<IFactory<? extends IReward>> rewardTypes = new ArrayList<>();
 	private List<Integer> rewardIDs = new ArrayList<>();
-	private IQuest quest;
+	private QuestInstance quest;
 	private final int qID;
 	private GuiScrollingButtons btnsLeft, btnsRight;
 
-	public GuiRewardEditor(GuiScreen parent, IQuest quest) {
-		super(parent, I18n.format("betterquesting.title.edit_rewards", I18n.format(quest.getUnlocalisedName())));
+	public GuiRewardEditor(GuiScreen parent, QuestInstance quest) {
+		super(parent, I18n.format("betterquesting.title.edit_rewards", I18n.format(quest.name)));
 		this.quest = quest;
-		this.qID = QuestDatabase.INSTANCE.getKey(quest);
+		this.qID = QuestDatabase.getKey(quest);
 	}
 
 	@Override
 	public void initGui() {
 		super.initGui();
-		rewardTypes = RewardRegistry.INSTANCE.getAll();
+		rewardTypes = new ArrayList<>(RewardRegistry.INSTANCE.rewardRegistry.values());
 		rewardIDs = quest.getRewards().getAllKeys();
 		btnsLeft = new GuiScrollingButtons(mc, guiLeft + 16, guiTop + 32, sizeX / 2 - 24, sizeY - 64);
 		btnsRight = new GuiScrollingButtons(mc, guiLeft + sizeX / 2 + 8, guiTop + 32, sizeX / 2 - 24, sizeY - 64);
@@ -57,7 +57,7 @@ public class GuiRewardEditor extends GuiScreenThemed implements IVolatileScreen,
 
 	@Override
 	public void refreshGui() {
-		IQuest tmp = QuestDatabase.INSTANCE.getValue(qID);
+		QuestInstance tmp = QuestDatabase.getValue(qID);
 		if(tmp == null) {
 			mc.displayGuiScreen(parent);
 			return;
@@ -86,8 +86,6 @@ public class GuiRewardEditor extends GuiScreenThemed implements IVolatileScreen,
 			GuiScreen editor = reward.getRewardEditor(this, quest);
 			if(editor != null) {
 				mc.displayGuiScreen(editor);
-			} else {
-				mc.displayGuiScreen(new GuiRewardEditDefault(this, quest, reward));
 			}
 		} else if(column == 1) {
 			quest.getRewards().removeKey(id);
@@ -124,10 +122,10 @@ public class GuiRewardEditor extends GuiScreenThemed implements IVolatileScreen,
 		base.add("config", quest.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
 		base.add("progress", quest.writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
 		NBTTagCompound tags = new NBTTagCompound();
-		tags.setInteger("action", EnumPacketAction.EDIT.ordinal()); // Action: Update data
-		tags.setInteger("questID", QuestDatabase.INSTANCE.getKey(quest));
+		tags.setInteger("action", EnumPacketAction.EDIT.ordinal());
+		tags.setInteger("questID", QuestDatabase.getKey(quest));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
-		PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tags));
+		PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tags));
 	}
 
 	public void RefreshColumns() {

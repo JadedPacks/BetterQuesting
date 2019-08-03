@@ -33,7 +33,7 @@ public class ToolboxToolLink extends GuiElement implements IToolboxTool {
 	}
 
 	@Override
-	public void drawTool(int mx, int my, float partialTick) {
+	public void drawTool(int mx, int my) {
 		if(b1 == null) {
 			return;
 		}
@@ -70,26 +70,20 @@ public class ToolboxToolLink extends GuiElement implements IToolboxTool {
 				base1.add("progress", b1.getQuest().writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
 				tag1.setTag("data", NBTConverter.JSONtoNBT_Object(base1, new NBTTagCompound()));
 				tag1.setInteger("action", EnumPacketAction.EDIT.ordinal());
-				tag1.setInteger("questID", QuestDatabase.INSTANCE.getKey(b1.getQuest()));
+				tag1.setInteger("questID", QuestDatabase.getKey(b1.getQuest()));
 				NBTTagCompound tag2 = new NBTTagCompound();
 				JsonObject base2 = new JsonObject();
 				base2.add("config", b2.getQuest().writeToJson(new JsonObject(), EnumSaveType.CONFIG));
 				base1.add("progress", b2.getQuest().writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
 				tag2.setTag("data", NBTConverter.JSONtoNBT_Object(base2, new NBTTagCompound()));
 				tag2.setInteger("action", EnumPacketAction.EDIT.ordinal());
-				tag2.setInteger("questID", QuestDatabase.INSTANCE.getKey(b2.getQuest()));
-				PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag1));
-				PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag2));
+				tag2.setInteger("questID", QuestDatabase.getKey(b2.getQuest()));
+				PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag1));
+				PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag2));
 				b1 = null;
 			}
 		}
 	}
-
-	@Override
-	public void onMouseScroll(int mx, int my, int scroll) {}
-
-	@Override
-	public void onKeyPressed(char c, int keyCode) {}
 
 	@Override
 	public boolean allowTooltips() {
@@ -99,11 +93,6 @@ public class ToolboxToolLink extends GuiElement implements IToolboxTool {
 	@Override
 	public boolean allowScrolling(int click) {
 		return b1 == null || click == 2;
-	}
-
-	@Override
-	public boolean allowZoom() {
-		return true;
 	}
 
 	@Override

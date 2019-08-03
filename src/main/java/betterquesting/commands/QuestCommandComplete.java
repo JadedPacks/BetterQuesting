@@ -1,11 +1,9 @@
 package betterquesting.commands;
 
-import betterquesting.api.properties.NativeProps;
-import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
-import betterquesting.commands.QuestCommandBase;
 import betterquesting.network.PacketSender;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestInstance;
 import betterquesting.storage.NameCache;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -28,14 +26,14 @@ public class QuestCommandComplete extends QuestCommandBase {
 	}
 
 	@Override
-	public List<String> autoComplete(ICommandSender sender, String[] args) {
+	public List<String> autoComplete(String[] args) {
 		ArrayList<String> list = new ArrayList<>();
 		if(args.length == 2) {
-			for(int i : QuestDatabase.INSTANCE.getAllKeys()) {
+			for(int i : QuestDatabase.getAllKeys()) {
 				list.add("" + i);
 			}
 		} else if(args.length == 3) {
-			return CommandBase.getListOfStringsMatchingLastWord(args, NameCache.INSTANCE.getAllNames().toArray(new String[0]));
+			return getListOfStringsMatchingLastWord(args, NameCache.getAllNames().toArray(new String[0]));
 		}
 		return list;
 	}
@@ -56,30 +54,30 @@ public class QuestCommandComplete extends QuestCommandBase {
 		} else {
 			uuid = this.findPlayerID(MinecraftServer.getServer(), sender.getCommandSenderName());
 		}
-		String pName = uuid == null ? "NULL" : NameCache.INSTANCE.getName(uuid);
+		String pName = uuid == null ? "NULL" : NameCache.getName(uuid);
 		try {
 			int id = Integer.parseInt(args[1].trim());
-			IQuest quest = QuestDatabase.INSTANCE.getValue(id);
+			QuestInstance quest = QuestDatabase.getValue(id);
 			quest.setComplete(uuid, 0);
 			int done = 0;
-			if(!quest.getProperties().getProperty(NativeProps.LOGIC_TASK).getResult(done, quest.getTasks().size())) {
+			if(!quest.logicTask.getResult(done, quest.getTasks().size())) {
 				for(ITask task : quest.getTasks().getAllValues()) {
 					task.setComplete(uuid);
 					done += 1;
-					if(quest.getProperties().getProperty(NativeProps.LOGIC_TASK).getResult(done, quest.getTasks().size())) {
+					if(quest.logicTask.getResult(done, quest.getTasks().size())) {
 						break;
 					}
 				}
 			}
-			sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.complete", new ChatComponentTranslation(quest.getUnlocalisedName()), pName));
+			sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.complete", new ChatComponentTranslation(quest.name), pName));
 		} catch(Exception e) {
 			throw getException(command);
 		}
-		PacketSender.INSTANCE.sendToAll(QuestDatabase.INSTANCE.getSyncPacket());
+		PacketSender.sendToAll(QuestDatabase.getSyncPacket());
 	}
 
 	@Override
-	public boolean isArgUsername(String[] args, int index) {
+	public boolean isArgUsername(int index) {
 		return index == 2;
 	}
 }

@@ -1,11 +1,10 @@
 package betterquesting.items;
 
-import betterquesting.api.api.QuestingAPI;
-import betterquesting.api.properties.NativeProps;
-import betterquesting.api.questing.party.IParty;
 import betterquesting.core.BetterQuesting;
+import betterquesting.questing.party.PartyInstance;
 import betterquesting.questing.party.PartyManager;
 import betterquesting.storage.LifeDatabase;
+import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -40,18 +39,18 @@ public class ItemExtraLife extends Item {
 	public ItemStack onItemRightClick(ItemStack stack, World world, EntityPlayer player) {
 		if(stack.getMetadata() != 0) {
 			return stack;
-		} else if(QuestSettings.INSTANCE.getProperty(NativeProps.HARDCORE)) {
+		} else if(QuestSettings.hardcore) {
 			if(!player.capabilities.isCreativeMode) {
 				stack.stackSize--;
 			}
 			int lives;
-			IParty party = PartyManager.INSTANCE.getUserParty(QuestingAPI.getQuestingUUID(player));
-			if(party == null || !party.getProperties().getProperty(NativeProps.PARTY_LIVES)) {
-				lives = LifeDatabase.INSTANCE.getLives(QuestingAPI.getQuestingUUID(player));
+			PartyInstance party = PartyManager.getUserParty(NameCache.getQuestingUUID(player));
+			if(party == null || !party.sharedLives) {
+				lives = LifeDatabase.getLives(NameCache.getQuestingUUID(player));
 			} else {
-				lives = LifeDatabase.INSTANCE.getLives(party);
+				lives = LifeDatabase.getLives(party);
 			}
-			if(lives >= QuestSettings.INSTANCE.getProperty(NativeProps.LIVES_MAX).intValue()) {
+			if(lives >= QuestSettings.livesMax) {
 				if(!world.isRemote) {
 					player.addChatComponentMessage(new ChatComponentText(EnumChatFormatting.RED.toString()).appendSibling(new ChatComponentTranslation("betterquesting.gui.full_lives")));
 				}
@@ -59,10 +58,10 @@ public class ItemExtraLife extends Item {
 			}
 			world.playSoundAtEntity(player, "random.levelup", 1F, 1F);
 			if(!world.isRemote) {
-				if(party == null || !party.getProperties().getProperty(NativeProps.PARTY_LIVES)) {
-					LifeDatabase.INSTANCE.setLives(QuestingAPI.getQuestingUUID(player), lives + 1);
+				if(party == null || !party.sharedLives) {
+					LifeDatabase.setLives(NameCache.getQuestingUUID(player), lives + 1);
 				} else {
-					LifeDatabase.INSTANCE.setLives(party, lives + 1);
+					LifeDatabase.setLives(party, lives + 1);
 				}
 				player.addChatComponentMessage(new ChatComponentTranslation("betterquesting.gui.remaining_lives", EnumChatFormatting.YELLOW.toString() + (lives + 1)));
 			}

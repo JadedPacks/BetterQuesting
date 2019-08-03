@@ -15,7 +15,6 @@ public class BQ_CommandAdmin extends CommandBase {
 		coms.add(new QuestCommandHardcore());
 		coms.add(new QuestCommandReset());
 		coms.add(new QuestCommandComplete());
-		coms.add(new QuestCommandDelete());
 		coms.add(new QuestCommandDefaults());
 		coms.add(new QuestCommandLives());
 	}
@@ -52,7 +51,7 @@ public class BQ_CommandAdmin extends CommandBase {
 		} else if(strings.length > 1) {
 			for(QuestCommandBase c : coms) {
 				if(c.getCommand().equalsIgnoreCase(strings[0])) {
-					return c.autoComplete(sender, strings);
+					return c.autoComplete(strings);
 				}
 			}
 		}
@@ -89,7 +88,7 @@ public class BQ_CommandAdmin extends CommandBase {
 		}
 		for(QuestCommandBase c : coms) {
 			if(c.getCommand().equalsIgnoreCase(args[0])) {
-				return c.isArgUsername(args, index);
+				return c.isArgUsername(index);
 			}
 		}
 		return false;

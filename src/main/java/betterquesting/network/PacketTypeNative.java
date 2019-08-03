@@ -15,11 +15,15 @@ public enum PacketTypeNative {
 	LINE_EDIT,
 	DETECT,
 	CLAIM,
-	EDIT_STATION,
 	NAME_CACHE,
 	NOTIFICATION,
 	SETTINGS,
-	IMPORT;
+	// Standard Expansion
+	LOOT_SYNC,
+	LOOT_CLAIM,
+	CHECKBOX,
+	CHOICE
+	;
 
 	private final ResourceLocation ID;
 

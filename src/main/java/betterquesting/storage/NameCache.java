@@ -2,7 +2,6 @@ package betterquesting.storage;
 
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.storage.INameCache;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.network.PacketSender;
@@ -11,6 +10,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.mojang.authlib.GameProfile;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
@@ -21,12 +21,23 @@ import java.util.Map.Entry;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class NameCache implements INameCache {
-	public static final NameCache INSTANCE = new NameCache();
-	private final ConcurrentHashMap<UUID, JsonObject> cache = new ConcurrentHashMap<>();
+public final class NameCache {
+	private static final ConcurrentHashMap<UUID, JsonObject> cache = new ConcurrentHashMap<>();
 
-	@Override
-	public String getName(UUID uuid) {
+	public static UUID getQuestingUUID(EntityPlayer player) {
+		if(player == null) {
+			return null;
+		}
+		if(player.worldObj.isRemote) {
+			UUID uuid = getUUID(player.getGameProfile().getName());
+			if(uuid != null) {
+				return uuid;
+			}
+		}
+		return player.getGameProfile().getId();
+	}
+
+	public static String getName(UUID uuid) {
 		if(!cache.containsKey(uuid)) {
 			return uuid.toString();
 		} else {
@@ -34,8 +45,7 @@ public final class NameCache implements INameCache {
 		}
 	}
 
-	@Override
-	public UUID getUUID(String name) {
+	public static UUID getUUID(String name) {
 		for(Entry<UUID, JsonObject> entry : cache.entrySet()) {
 			if(JsonHelper.GetString(entry.getValue(), "name", "").equalsIgnoreCase(name)) {
 				return entry.getKey();
@@ -44,8 +54,7 @@ public final class NameCache implements INameCache {
 		return null;
 	}
 
-	@Override
-	public boolean isOP(UUID uuid) {
+	public static boolean isOP(UUID uuid) {
 		if(!cache.containsKey(uuid)) {
 			return false;
 		} else {
@@ -53,8 +62,7 @@ public final class NameCache implements INameCache {
 		}
 	}
 
-	@Override
-	public void updateNames(MinecraftServer server) {
+	public static void updateNames(MinecraftServer server) {
 		String[] names = server.getPlayerProfileCache().func_152654_a();
 		for(String name : names) {
 			EntityPlayerMP player = server.getConfigurationManager().getPlayerByUsername(name);
@@ -71,31 +79,27 @@ public final class NameCache implements INameCache {
 				cache.put(prof.getId(), json);
 			}
 		}
-		PacketSender.INSTANCE.sendToAll(getSyncPacket());
+		PacketSender.sendToAll(getSyncPacket());
 	}
 
-	@Override
-	public int size() {
+	public static int size() {
 		return cache.size();
 	}
 
-	@Override
-	public QuestingPacket getSyncPacket() {
+	public static QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject json = new JsonObject();
-		json.add("cache", this.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+		json.add("cache", writeToJson(new JsonArray(), EnumSaveType.CONFIG));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound()));
 		return new QuestingPacket(PacketTypeNative.NAME_CACHE.GetLocation(), tags);
 	}
 
-	@Override
-	public void readPacket(NBTTagCompound payload) {
+	public static void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
 		readFromJson(JsonHelper.GetArray(base, "cache"), EnumSaveType.CONFIG);
 	}
 
-	@Override
-	public JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
+	public static JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
 		if(saveType != EnumSaveType.CONFIG) {
 			return json;
 		}
@@ -109,8 +113,7 @@ public final class NameCache implements INameCache {
 		return json;
 	}
 
-	@Override
-	public void readFromJson(JsonArray json, EnumSaveType saveType) {
+	public static void readFromJson(JsonArray json, EnumSaveType saveType) {
 		if(saveType != EnumSaveType.CONFIG) {
 			return;
 		}
@@ -133,12 +136,11 @@ public final class NameCache implements INameCache {
 		}
 	}
 
-	public void reset() {
+	public static void reset() {
 		cache.clear();
 	}
 
-	@Override
-	public List<String> getAllNames() {
+	public static List<String> getAllNames() {
 		List<String> list = new ArrayList<>();
 		for(JsonObject json : cache.values()) {
 			if(json != null && json.has("name")) {

@@ -28,10 +28,10 @@ public class QuestCommandDefaults extends QuestCommandBase {
 	}
 
 	@Override
-	public List<String> autoComplete(ICommandSender sender, String[] args) {
+	public List<String> autoComplete(String[] args) {
 		ArrayList<String> list = new ArrayList<>();
 		if(args.length == 2) {
-			return CommandBase.getListOfStringsMatchingLastWord(args, "save", "load");
+			return getListOfStringsMatchingLastWord(args, "save", "load");
 		}
 		return list;
 	}
@@ -46,9 +46,9 @@ public class QuestCommandDefaults extends QuestCommandBase {
 		File qFile = new File("config/betterquesting/DefaultQuests.json");
 		if(args[1].equalsIgnoreCase("save")) {
 			JsonObject base = new JsonObject();
-			base.add("questSettings", QuestSettings.INSTANCE.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
-			base.add("questDatabase", QuestDatabase.INSTANCE.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-			base.add("questLines", QuestLineDatabase.INSTANCE.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+			base.add("questSettings", QuestSettings.writeToJson(new JsonObject()));
+			base.add("questDatabase", QuestDatabase.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+			base.add("questLines", QuestLineDatabase.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
 			JsonHelper.WriteToFile(qFile, base);
 			if(args.length == 3 && !args[2].equalsIgnoreCase("DefaultQuests")) {
 				sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.default.save2", args[2] + ".json"));
@@ -57,19 +57,19 @@ public class QuestCommandDefaults extends QuestCommandBase {
 			}
 		} else if(args[1].equalsIgnoreCase("load")) {
 			if(qFile.exists()) {
-				JsonArray jsonP = QuestDatabase.INSTANCE.writeToJson(new JsonArray(), EnumSaveType.PROGRESS);
+				JsonArray jsonP = QuestDatabase.writeToJson(new JsonArray(), EnumSaveType.PROGRESS);
 				JsonObject j1 = JsonHelper.ReadFromFile(qFile);
-				QuestSettings.INSTANCE.readFromJson(JsonHelper.GetObject(j1, "questSettings"), EnumSaveType.CONFIG);
-				QuestDatabase.INSTANCE.readFromJson(JsonHelper.GetArray(j1, "questDatabase"), EnumSaveType.CONFIG);
-				QuestLineDatabase.INSTANCE.readFromJson(JsonHelper.GetArray(j1, "questLines"), EnumSaveType.CONFIG);
-				QuestDatabase.INSTANCE.readFromJson(jsonP, EnumSaveType.PROGRESS);
+				QuestSettings.readFromJson(JsonHelper.GetObject(j1, "questSettings"));
+				QuestDatabase.readFromJson(JsonHelper.GetArray(j1, "questDatabase"), EnumSaveType.CONFIG);
+				QuestLineDatabase.readFromJson(JsonHelper.GetArray(j1, "questLines"), EnumSaveType.CONFIG);
+				QuestDatabase.readFromJson(jsonP, EnumSaveType.PROGRESS);
 				if(args.length == 3 && !args[2].equalsIgnoreCase("DefaultQuests")) {
 					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.default.load2", args[2] + ".json"));
 				} else {
 					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.default.load"));
 				}
-				PacketSender.INSTANCE.sendToAll(QuestDatabase.INSTANCE.getSyncPacket());
-				PacketSender.INSTANCE.sendToAll(QuestLineDatabase.INSTANCE.getSyncPacket());
+				PacketSender.sendToAll(QuestDatabase.getSyncPacket());
+				PacketSender.sendToAll(QuestLineDatabase.getSyncPacket());
 			} else {
 				sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.default.none"));
 			}

@@ -1,7 +1,5 @@
 package betterquesting.commands;
 
-import betterquesting.api.properties.NativeProps;
-import betterquesting.commands.QuestCommandBase;
 import betterquesting.network.PacketSender;
 import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
@@ -30,17 +28,17 @@ public class QuestCommandEdit extends QuestCommandBase {
 	}
 
 	@Override
-	public List<String> autoComplete(ICommandSender sender, String[] args) {
+	public List<String> autoComplete(String[] args) {
 		ArrayList<String> list = new ArrayList<>();
 		if(args.length == 2) {
-			return CommandBase.getListOfStringsMatchingLastWord(args, "true", "false");
+			return getListOfStringsMatchingLastWord(args, "true", "false");
 		}
 		return list;
 	}
 
 	@Override
 	public void runCommand(CommandBase command, ICommandSender sender, String[] args) {
-		boolean flag = !QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE);
+		boolean flag = !QuestSettings.edit;
 		if(args.length == 2) {
 			try {
 				if(args[1].equalsIgnoreCase("on")) {
@@ -55,10 +53,10 @@ public class QuestCommandEdit extends QuestCommandBase {
 			}
 		}
 		if(flag) {
-			NameCache.INSTANCE.updateNames(MinecraftServer.getServer());
+			NameCache.updateNames(MinecraftServer.getServer());
 		}
-		QuestSettings.INSTANCE.setProperty(NativeProps.EDIT_MODE, flag);
-		sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.edit", new ChatComponentTranslation(QuestSettings.INSTANCE.getProperty(NativeProps.EDIT_MODE) ? "options.on" : "options.off")));
-		PacketSender.INSTANCE.sendToAll(QuestSettings.INSTANCE.getSyncPacket());
+		QuestSettings.edit = flag;
+		sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.edit", new ChatComponentTranslation(flag ? "options.on" : "options.off")));
+		PacketSender.sendToAll(QuestSettings.getSyncPacket());
 	}
 }

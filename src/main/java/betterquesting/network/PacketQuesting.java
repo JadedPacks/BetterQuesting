@@ -1,8 +1,8 @@
 package betterquesting.network;
 
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.network.IPacketHandler;
 import betterquesting.core.BetterQuesting;
+import betterquesting.storage.NameCache;
 import cpw.mods.fml.common.network.ByteBufUtils;
 import cpw.mods.fml.common.network.simpleimpl.IMessage;
 import cpw.mods.fml.common.network.simpleimpl.IMessageHandler;
@@ -37,14 +37,14 @@ public class PacketQuesting implements IMessage {
 				return null;
 			}
 			EntityPlayerMP sender = ctx.getServerHandler().playerEntity;
-			NBTTagCompound message = PacketAssembly.INSTANCE.assemblePacket(sender == null ? null : QuestingAPI.getQuestingUUID(sender), packet.tags);
+			NBTTagCompound message = PacketAssembly.INSTANCE.assemblePacket(sender == null ? null : NameCache.getQuestingUUID(sender), packet.tags);
 			if(message == null) {
 				return null;
 			} else if(!message.hasKey("ID")) {
 				BetterQuesting.logger.warn("Recieved a packet server side without an ID");
 				return null;
 			}
-			IPacketHandler handler = PacketTypeRegistry.INSTANCE.getPacketHandler(new ResourceLocation(message.getString("ID")));
+			IPacketHandler handler = PacketTypeRegistry.getPacketHandler(new ResourceLocation(message.getString("ID")));
 			if(handler == null) {
 				BetterQuesting.logger.warn("Recieved a packet server side with an invalid ID: " + message.getString("ID"));
 				return null;
@@ -69,7 +69,7 @@ public class PacketQuesting implements IMessage {
 				BetterQuesting.logger.warn("Recieved a packet server side without an ID");
 				return null;
 			}
-			IPacketHandler handler = PacketTypeRegistry.INSTANCE.getPacketHandler(new ResourceLocation(message.getString("ID")));
+			IPacketHandler handler = PacketTypeRegistry.getPacketHandler(new ResourceLocation(message.getString("ID")));
 			if(handler == null) {
 				BetterQuesting.logger.warn("Recieved a packet server side with an invalid ID: " + message.getString("ID"));
 				return null;

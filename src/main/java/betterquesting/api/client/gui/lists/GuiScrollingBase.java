@@ -3,6 +3,7 @@ package betterquesting.api.client.gui.lists;
 import betterquesting.api.client.gui.GuiElement;
 import betterquesting.api.client.gui.misc.IGuiEmbedded;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.client.themes.ThemeStandard;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.Minecraft;
@@ -71,31 +72,27 @@ public abstract class GuiScrollingBase<T extends IScrollingEntry> extends GuiEle
 			}
 			listY += e.getHeight();
 		}
-		boolean hideBounds = false;
-		if(!hideBounds) {
-			RenderUtils.DrawLine(posX, posY, posX + width - 8, posY, 1F, getTextColor());
-			RenderUtils.DrawLine(posX, posY + height, posX + width - 8, posY + height, 1F, getTextColor());
-		}
-		this.mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+		RenderUtils.DrawLine(posX, posY, posX + width - 8, posY, 1F, getTextColor());
+		RenderUtils.DrawLine(posX, posY + height, posX + width - 8, posY + height, 1F, getTextColor());
+		this.mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 		if(maxScroll > 0) {
-			this.drawTexturedModalRect(posX + width - 8, posY, 248, 0, 8, 20);
+			drawTexturedModalRect(posX + width - 8, posY, 248, 0, 8, 20);
 			int n = 20;
 			while(n + 20 < height) {
-				this.drawTexturedModalRect(posX + width - 8, posY + n, 248, 20, 8, 20);
+				drawTexturedModalRect(posX + width - 8, posY + n, 248, 20, 8, 20);
 				n += 20;
 			}
 			if(height % 20 != 0) {
 				n -= 20 - height % 20;
 			}
-			this.drawTexturedModalRect(posX + width - 8, posY + n, 248, 40, 8, 20);
-			this.drawTexturedModalRect(posX + width - 8, posY + (int) Math.max(0, n * (float) scroll / (float) maxScroll), 248, 60, 8, 20);
+			drawTexturedModalRect(posX + width - 8, posY + n, 248, 40, 8, 20);
+			drawTexturedModalRect(posX + width - 8, posY + (int) Math.max(0, n * (float) scroll / (float) maxScroll), 248, 60, 8, 20);
 		}
 		GL11.glPopMatrix();
 	}
 
 	@Override
 	public void drawForeground(int mx, int my, float partialTick) {
-		int count = entries.size();
 		int listY = posY - scroll;
 		boolean isHovering = isWithin(mx, my, posX, posY, width, height);
 		int mx2 = !isHovering ? -99 : mx;
@@ -107,7 +104,7 @@ public abstract class GuiScrollingBase<T extends IScrollingEntry> extends GuiEle
 				GL11.glEnable(GL11.GL_SCISSOR_TEST);
 				RenderUtils.guiScissor(mc, posX, posY, width - 8, height);
 			}
-			e.drawForeground(mx2, my2, posX, listY, width - 8);
+			e.drawForeground(mx2, my2);
 			if(scissor) {
 				GL11.glDisable(GL11.GL_SCISSOR_TEST);
 			}
@@ -119,9 +116,8 @@ public abstract class GuiScrollingBase<T extends IScrollingEntry> extends GuiEle
 	@Override
 	public void onMouseClick(int mx, int my, int click) {
 		int listY = posY - scroll;
-		for(int i = 0; i < entries.size(); i++) {
-			IScrollingEntry e = entries.get(i);
-			e.onMouseClick(mx, my, posX, listY, click, i);
+		for(IScrollingEntry e : entries) {
+			e.onMouseClick(mx, my, click);
 			listY += e.getHeight();
 		}
 	}
@@ -130,12 +126,9 @@ public abstract class GuiScrollingBase<T extends IScrollingEntry> extends GuiEle
 	public void onMouseScroll(int mx, int my, int dx) {
 		if(isWithin(mx, my, posX, posY, width, height)) {
 			int maxScroll = Math.max(0, getListHeight() - height);
-			scroll = MathHelper.clamp_int(scroll + (dx * getScrollSpeed()), 0, maxScroll);
+			scroll = MathHelper.clamp_int(scroll + (dx * 8), 0, maxScroll);
 		}
 	}
-
-	@Override
-	public void onKeyTyped(char c, int keyCode) {}
 
 	public void allowDragScroll(boolean state) {
 		this.dragScroll = state;
@@ -173,10 +166,6 @@ public abstract class GuiScrollingBase<T extends IScrollingEntry> extends GuiEle
 
 	public List<T> getEntryList() {
 		return entries;
-	}
-
-	public int getScrollSpeed() {
-		return 8;
 	}
 
 	public void setScrollPos(int value) {

@@ -1,7 +1,5 @@
 package betterquesting.commands;
 
-import betterquesting.api.properties.NativeProps;
-import betterquesting.commands.QuestCommandBase;
 import betterquesting.network.PacketSender;
 import betterquesting.storage.QuestSettings;
 import net.minecraft.command.CommandBase;
@@ -28,17 +26,17 @@ public class QuestCommandHardcore extends QuestCommandBase {
 	}
 
 	@Override
-	public List<String> autoComplete(ICommandSender sender, String[] args) {
+	public List<String> autoComplete(String[] args) {
 		ArrayList<String> list = new ArrayList<>();
 		if(args.length == 2) {
-			return CommandBase.getListOfStringsMatchingLastWord(args, "true", "false");
+			return getListOfStringsMatchingLastWord(args, "true", "false");
 		}
 		return list;
 	}
 
 	@Override
 	public void runCommand(CommandBase command, ICommandSender sender, String[] args) {
-		boolean flag = !QuestSettings.INSTANCE.getProperty(NativeProps.HARDCORE);
+		boolean flag = !QuestSettings.hardcore;
 		if(args.length == 2) {
 			try {
 				if(args[1].equalsIgnoreCase("on")) {
@@ -52,8 +50,8 @@ public class QuestCommandHardcore extends QuestCommandBase {
 				throw this.getException(command);
 			}
 		}
-		QuestSettings.INSTANCE.setProperty(NativeProps.HARDCORE, flag);
-		sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.hardcore", new ChatComponentTranslation(QuestSettings.INSTANCE.getProperty(NativeProps.HARDCORE) ? "options.on" : "options.off")));
-		PacketSender.INSTANCE.sendToAll(QuestSettings.INSTANCE.getSyncPacket());
+		QuestSettings.hardcore = flag;
+		sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.hardcore", new ChatComponentTranslation(flag ? "options.on" : "options.off")));
+		PacketSender.sendToAll(QuestSettings.getSyncPacket());
 	}
 }

@@ -20,7 +20,7 @@ import java.util.List;
 @SideOnly(Side.CLIENT)
 public class GuiTextEditor extends GuiScreenThemed implements IVolatileScreen {
 	private ICallback<String> host;
-	private String text = "";
+	private String text;
 	private int listScroll = 0, maxRows = 0, cursorPosition;
 	private GuiScrollingText scrollingText;
 

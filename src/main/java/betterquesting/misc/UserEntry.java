@@ -45,7 +45,7 @@ public class UserEntry {
 
 	public void readFromJson(JsonObject json) {
 		uuid = UUID.fromString(JsonHelper.GetString(json, "uuid", ""));
-		timestamp = JsonHelper.GetNumber(json, "timestamp", 0).longValue();
+		timestamp = JsonHelper.GetLong(json, "timestamp", 0);
 		claimed = JsonHelper.GetBoolean(json, "claimed", false);
 	}
 }

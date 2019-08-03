@@ -1,11 +1,10 @@
 package betterquesting.questing;
 
 import betterquesting.api.enums.EnumSaveType;
-import betterquesting.api.questing.IQuestLineEntry;
 import betterquesting.api.utils.JsonHelper;
 import com.google.gson.JsonObject;
 
-public class QuestLineEntry implements IQuestLineEntry {
+public class QuestLineEntry {
 	private int size = 0, posX = 0, posY = 0;
 
 	public QuestLineEntry(JsonObject json) {
@@ -22,33 +21,27 @@ public class QuestLineEntry implements IQuestLineEntry {
 		this.posY = y;
 	}
 
-	@Override
 	public int getSize() {
 		return size;
 	}
 
-	@Override
 	public int getPosX() {
 		return posX;
 	}
 
-	@Override
 	public int getPosY() {
 		return posY;
 	}
 
-	@Override
 	public void setPosition(int posX, int posY) {
 		this.posX = posX;
 		this.posY = posY;
 	}
 
-	@Override
 	public void setSize(int size) {
 		this.size = size;
 	}
 
-	@Override
 	public JsonObject writeToJson(JsonObject json, EnumSaveType saveType) {
 		if(saveType != EnumSaveType.CONFIG) {
 			return json;
@@ -59,13 +52,12 @@ public class QuestLineEntry implements IQuestLineEntry {
 		return json;
 	}
 
-	@Override
 	public void readFromJson(JsonObject json, EnumSaveType saveType) {
 		if(saveType != EnumSaveType.CONFIG) {
 			return;
 		}
-		size = JsonHelper.GetNumber(json, "size", 24).intValue();
-		posX = JsonHelper.GetNumber(json, "x", 0).intValue();
-		posY = JsonHelper.GetNumber(json, "y", 0).intValue();
+		size = JsonHelper.GetInt(json, "size", 24);
+		posX = JsonHelper.GetInt(json, "x", 0);
+		posY = JsonHelper.GetInt(json, "y", 0);
 	}
 }

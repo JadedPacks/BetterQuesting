@@ -10,12 +10,11 @@ import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.misc.ICallback;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.properties.NativeProps;
-import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
+import betterquesting.questing.QuestLine;
 import betterquesting.questing.QuestLineDatabase;
 import com.google.gson.JsonObject;
 import cpw.mods.fml.relauncher.Side;
@@ -36,7 +35,7 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 	private GuiButtonThemed btnDesign;
 	private GuiTextField lineTitle;
 	private GuiBigTextField lineDesc;
-	private IQuestLine selected;
+	private QuestLine selected;
 	int selID = -1;
 	private GuiScrollingButtons btnList;
 
@@ -62,18 +61,18 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 		btnList = new GuiScrollingButtons(mc, guiLeft + 16, guiTop + 32, btnWidth - 8, sizeY - 80);
 		this.embedded.add(btnList);
 		if(selected != null) {
-			lineTitle.setText(selected.getUnlocalisedName());
-			lineDesc.setText(selected.getUnlocalisedDescription());
+			lineTitle.setText(selected.name);
+			lineDesc.setText(selected.desc);
 		}
 		RefreshColumns();
 	}
 
 	@Override
 	public void refreshGui() {
-		selected = QuestLineDatabase.INSTANCE.getValue(selID);
+		selected = QuestLineDatabase.getValue(selID);
 		if(selected != null) {
-			lineTitle.setText(selected.getUnlocalisedName());
-			lineDesc.setText(selected.getUnlocalisedDescription());
+			lineTitle.setText(selected.name);
+			lineDesc.setText(selected.desc);
 		}
 		RefreshColumns();
 	}
@@ -86,19 +85,19 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 		mc.fontRendererObj.drawString(I18n.format("betterquesting.gui.name"), guiLeft + sizeX / 2 + 8, guiTop + sizeY / 2 - 72, getTextColor(), false);
 		mc.fontRendererObj.drawString(I18n.format("betterquesting.gui.description"), guiLeft + sizeX / 2 + 8, guiTop + sizeY / 2 - 32, getTextColor(), false);
 		lineTitle.drawTextBox();
-		lineDesc.drawTextBox(mx, my, partialTick);
+		lineDesc.drawTextBox(mx, my);
 	}
 
-	public void SendChanges(EnumPacketAction action, IQuestLine questLine) {
-		SendChanges(action, QuestLineDatabase.INSTANCE.getKey(questLine));
+	public void SendChanges(EnumPacketAction action, QuestLine questLine) {
+		SendChanges(action, QuestLineDatabase.getKey(questLine));
 	}
 
 	public void SendChanges(EnumPacketAction action, int lineID) {
-		SendChanges(action, lineID, QuestLineDatabase.INSTANCE.getOrderIndex(lineID));
+		SendChanges(action, lineID, QuestLineDatabase.getOrderIndex(lineID));
 	}
 
 	public void SendChanges(EnumPacketAction action, int lineID, int order) {
-		IQuestLine questLine = QuestLineDatabase.INSTANCE.getValue(lineID);
+		QuestLine questLine = QuestLineDatabase.getValue(lineID);
 		if(action == null) {
 			return;
 		}
@@ -108,10 +107,10 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 			base.add("line", questLine.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
 			tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		}
-		tags.setInteger("lineID", questLine == null ? -1 : QuestLineDatabase.INSTANCE.getKey(questLine));
+		tags.setInteger("lineID", questLine == null ? -1 : QuestLineDatabase.getKey(questLine));
 		tags.setInteger("order", order);
 		tags.setInteger("action", action.ordinal());
-		PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tags));
+		PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tags));
 	}
 
 	@Override
@@ -129,11 +128,11 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 				n3 = (btn.id >> 2) - 5;
 			if(n2 == 0) {
 				if(n3 >= 0) {
-					selected = QuestLineDatabase.INSTANCE.getValue(n3);
+					selected = QuestLineDatabase.getValue(n3);
 					selID = n3;
 					if(selected != null) {
-						lineTitle.setText(selected.getUnlocalisedName());
-						lineDesc.setText(selected.getUnlocalisedDescription());
+						lineTitle.setText(selected.name);
+						lineDesc.setText(selected.desc);
 					}
 				} else {
 					selected = null;
@@ -146,7 +145,7 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 				}
 			} else if(n2 == 2) {
 				if(n3 >= 0) {
-					int order = QuestLineDatabase.INSTANCE.getOrderIndex(n3);
+					int order = QuestLineDatabase.getOrderIndex(n3);
 					if(order > 0) {
 						SendChanges(EnumPacketAction.EDIT, n3, order - 1);
 					}
@@ -164,15 +163,15 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 			if(keyCode == Keyboard.KEY_RETURN) {
 				boolean flag = false;
 				if(lineTitle.isFocused()) {
-					if(!lineTitle.getText().equals(selected.getUnlocalisedName())) {
-						selected.getProperties().setProperty(NativeProps.NAME, lineTitle.getText());
+					if(!lineTitle.getText().equals(selected.name)) {
+						selected.name = lineTitle.getText();
 						flag = true;
 					}
 					lineTitle.setFocused(false);
 				}
 				if(lineDesc.isFocused()) {
-					if(!lineDesc.getText().equals(selected.getUnlocalisedDescription())) {
-						selected.getProperties().setProperty(NativeProps.DESC, lineDesc.getText());
+					if(!lineDesc.getText().equals(selected.desc)) {
+						selected.desc = lineDesc.getText();
 						flag = true;
 					}
 					lineDesc.setFocused(false);
@@ -190,12 +189,12 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 		lineDesc.mouseClicked(mx, my, click);
 		if(selected != null) {
 			boolean flag = false;
-			if(!lineTitle.isFocused() && !lineTitle.getText().equals(selected.getUnlocalisedName())) {
-				selected.getProperties().setProperty(NativeProps.NAME, lineTitle.getText());
+			if(!lineTitle.isFocused() && !lineTitle.getText().equals(selected.name)) {
+				selected.name = lineTitle.getText();
 				flag = true;
 			}
-			if(!lineDesc.isFocused() && !lineDesc.getText().equals(selected.getUnlocalisedDescription())) {
-				selected.getProperties().setProperty(NativeProps.DESC, lineDesc.getText());
+			if(!lineDesc.isFocused() && !lineDesc.getText().equals(selected.desc)) {
+				selected.desc = lineDesc.getText();
 				flag = true;
 			}
 			if(flag) {
@@ -211,19 +210,19 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 	}
 
 	public void RefreshColumns() {
-		List<Integer> questList = QuestLineDatabase.INSTANCE.getAllKeys();
+		List<Integer> questList = QuestLineDatabase.getAllKeys();
 		if(btnDesign != null) {
 			btnDesign.enabled = selected != null;
 		}
 		btnList.getEntryList().clear();
 		for(int qlid : questList) {
-			IQuestLine line = QuestLineDatabase.INSTANCE.getValue(qlid);
+			QuestLine line = QuestLineDatabase.getValue(qlid);
 			if(line == null) {
 				continue;
 			}
 			int bWidth = btnList.getListWidth(),
 				bID = (5 + qlid) << 2;
-			GuiButtonThemed btn1 = new GuiButtonThemed(bID, 0, 0, bWidth - 40, 20, I18n.format(line.getUnlocalisedName()));
+			GuiButtonThemed btn1 = new GuiButtonThemed(bID, 0, 0, bWidth - 40, 20, I18n.format(line.name));
 			btn1.enabled = line != selected;
 			GuiButtonThemed btn2 = new GuiButtonThemed(bID + 1, 0, 0, 20, 20, "" + EnumChatFormatting.RED + EnumChatFormatting.BOLD + "x");
 			GuiButtonThemed btn3 = new GuiButtonThemed(bID + 2, 0, 0, 20, 20, "" + EnumChatFormatting.YELLOW + EnumChatFormatting.BOLD + "^");
@@ -237,7 +236,7 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 			lineDesc.setText(text);
 		}
 		if(selected != null) {
-			selected.getProperties().setProperty(NativeProps.DESC, text);
+			selected.desc = text;
 			SendChanges(EnumPacketAction.EDIT, selected);
 		}
 	}

@@ -1,6 +1,5 @@
 package betterquesting.commands;
 
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.storage.NameCache;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
@@ -23,7 +22,7 @@ public abstract class QuestCommandBase {
 		return args.length == 1;
 	}
 
-	public List<String> autoComplete(ICommandSender sender, String[] args) {
+	public List<String> autoComplete(String[] args) {
 		return new ArrayList<>();
 	}
 
@@ -37,6 +36,10 @@ public abstract class QuestCommandBase {
 		return new WrongUsageException(message);
 	}
 
+	public boolean isArgUsername(int index) {
+		return false;
+	}
+
 	protected UUID findPlayerID(MinecraftServer server, String name) {
 		UUID playerID;
 		EntityPlayerMP player = server.getConfigurationManager().getPlayerByUsername(name);
@@ -44,15 +47,22 @@ public abstract class QuestCommandBase {
 			try {
 				playerID = UUID.fromString(name);
 			} catch(Exception e) {
-				playerID = NameCache.INSTANCE.getUUID(name);
+				playerID = NameCache.getUUID(name);
 			}
 		} else {
-			playerID = QuestingAPI.getQuestingUUID(player);
+			playerID = NameCache.getQuestingUUID(player);
 		}
 		return playerID;
 	}
 
-	public boolean isArgUsername(String[] args, int index) {
-		return false;
+	protected List<String> getListOfStringsMatchingLastWord(String[] args, String... words) {
+		String lastWord = args[args.length - 1];
+		ArrayList<String> ret = new ArrayList<>();
+		for(String word : words) {
+			if(CommandBase.doesStringStartWith(lastWord, word)) {
+				ret.add(word);
+			}
+		}
+		return ret;
 	}
 }

@@ -6,14 +6,14 @@ import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.IQuestLine;
-import betterquesting.api.questing.IQuestLineEntry;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.client.toolbox.ToolboxGuiMain;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestLine;
 import betterquesting.questing.QuestLineDatabase;
+import betterquesting.questing.QuestLineEntry;
 import com.google.gson.JsonObject;
 import net.minecraft.nbt.NBTTagCompound;
 
@@ -32,7 +32,7 @@ public class ToolboxToolScale implements IToolboxTool {
 	@Override
 	public void disableTool() {
 		if(grabbed != null) {
-			IQuestLineEntry qle = gui.getQuestLine().getQuestLine().getValue(grabID);
+			QuestLineEntry qle = gui.getQuestLine().getQuestLine().getValue(grabID);
 			if(qle != null) {
 				grabbed.width = qle.getSize();
 				grabbed.height = qle.getSize();
@@ -43,7 +43,7 @@ public class ToolboxToolScale implements IToolboxTool {
 	}
 
 	@Override
-	public void drawTool(int mx, int my, float partialTick) {
+	public void drawTool(int mx, int my) {
 		if(grabbed != null) {
 			int snap = ToolboxGuiMain.getSnapValue();
 			int size = Math.max(mx - grabbed.xPosition, my - grabbed.yPosition);
@@ -58,7 +58,7 @@ public class ToolboxToolScale implements IToolboxTool {
 	@Override
 	public void onMouseClick(int mx, int my, int click) {
 		if(click == 1) {
-			IQuestLineEntry qle = gui.getQuestLine().getQuestLine().getValue(grabID);
+			QuestLineEntry qle = gui.getQuestLine().getQuestLine().getValue(grabID);
 			if(qle != null) {
 				grabbed.width = qle.getSize();
 				grabbed.height = qle.getSize();
@@ -70,11 +70,11 @@ public class ToolboxToolScale implements IToolboxTool {
 		}
 		if(grabbed == null) {
 			grabbed = gui.getQuestLine().getButtonAt(mx, my);
-			grabID = grabbed == null ? -1 : QuestDatabase.INSTANCE.getKey(grabbed.getQuest());
+			grabID = grabbed == null ? -1 : QuestDatabase.getKey(grabbed.getQuest());
 		} else {
-			IQuestLine qLine = gui.getQuestLine().getQuestLine();
-			int lID = QuestLineDatabase.INSTANCE.getKey(qLine);
-			IQuestLineEntry qle = gui.getQuestLine().getQuestLine().getValue(grabID);
+			QuestLine qLine = gui.getQuestLine().getQuestLine();
+			int lID = QuestLineDatabase.getKey(qLine);
+			QuestLineEntry qle = gui.getQuestLine().getQuestLine().getValue(grabID);
 			if(qle != null) {
 				qle.setSize(Math.max(grabbed.width, grabbed.height));
 				NBTTagCompound tag2 = new NBTTagCompound();
@@ -83,18 +83,12 @@ public class ToolboxToolScale implements IToolboxTool {
 				tag2.setTag("data", NBTConverter.JSONtoNBT_Object(base2, new NBTTagCompound()));
 				tag2.setInteger("action", EnumPacketAction.EDIT.ordinal());
 				tag2.setInteger("lineID", lID);
-				PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tag2));
+				PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tag2));
 			}
 			grabbed = null;
 			grabID = -1;
 		}
 	}
-
-	@Override
-	public void onMouseScroll(int mx, int my, int scroll) {}
-
-	@Override
-	public void onKeyPressed(char c, int key) {}
 
 	@Override
 	public boolean allowTooltips() {
@@ -104,11 +98,6 @@ public class ToolboxToolScale implements IToolboxTool {
 	@Override
 	public boolean allowScrolling(int click) {
 		return grabbed == null || click == 2;
-	}
-
-	@Override
-	public boolean allowZoom() {
-		return true;
 	}
 
 	@Override

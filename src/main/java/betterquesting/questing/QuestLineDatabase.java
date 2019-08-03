@@ -2,8 +2,6 @@ package betterquesting.questing;
 
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.IQuestLine;
-import betterquesting.api.questing.IQuestLineDatabase;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.misc.QuestLineSortByKey;
@@ -18,13 +16,11 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class QuestLineDatabase implements IQuestLineDatabase {
-	public static final QuestLineDatabase INSTANCE = new QuestLineDatabase();
-	private final ConcurrentHashMap<Integer, IQuestLine> questLines = new ConcurrentHashMap<>();
-	private final List<Integer> lineOrder = new ArrayList<>();
+public final class QuestLineDatabase {
+	private static final ConcurrentHashMap<Integer, QuestLine> questLines = new ConcurrentHashMap<>();
+	private static final List<Integer> lineOrder = new ArrayList<>();
 
-	@Override
-	public int getOrderIndex(int lineID) {
+	public static int getOrderIndex(int lineID) {
 		if(!questLines.containsKey(lineID)) {
 			return -1;
 		} else if(!lineOrder.contains(lineID)) {
@@ -33,26 +29,22 @@ public final class QuestLineDatabase implements IQuestLineDatabase {
 		return lineOrder.indexOf(lineID);
 	}
 
-	@Override
-	public void setOrderIndex(int lineID, int index) {
+	public static void setOrderIndex(int lineID, int index) {
 		lineOrder.remove((Integer) lineID);
 		lineOrder.add(index, lineID);
 	}
 
-	@Override
-	public IQuestLine createNew() {
+	public QuestLine createNew() {
 		return new QuestLine();
 	}
 
-	@Override
-	public void removeQuest(int questID) {
-		for(IQuestLine ql : getAllValues()) {
+	public static void removeQuest(int questID) {
+		for(QuestLine ql : getAllValues()) {
 			ql.removeKey(questID);
 		}
 	}
 
-	@Override
-	public Integer nextKey() {
+	public static Integer nextKey() {
 		int id = 0;
 		while(questLines.containsKey(id)) {
 			id += 1;
@@ -60,27 +52,23 @@ public final class QuestLineDatabase implements IQuestLineDatabase {
 		return id;
 	}
 
-	@Override
-	public void add(IQuestLine questLine, Integer id) {
+	public static void add(QuestLine questLine, Integer id) {
 		if(id < 0 || questLine == null || questLines.containsValue(questLine) || questLines.containsKey(id)) {
 			return;
 		}
 		questLines.put(id, questLine);
 	}
 
-	@Override
-	public boolean removeKey(Integer lineId) {
+	public static boolean removeKey(Integer lineId) {
 		return questLines.remove(lineId) != null;
 	}
 
-	@Override
-	public boolean removeValue(IQuestLine quest) {
+	public boolean removeValue(QuestLine quest) {
 		return removeKey(getKey(quest));
 	}
 
-	@Override
-	public Integer getKey(IQuestLine questLine) {
-		for(Entry<Integer, IQuestLine> entry : questLines.entrySet()) {
+	public static Integer getKey(QuestLine questLine) {
+		for(Entry<Integer, QuestLine> entry : questLines.entrySet()) {
 			if(entry.getValue() == questLine) {
 				return entry.getKey();
 			}
@@ -88,37 +76,31 @@ public final class QuestLineDatabase implements IQuestLineDatabase {
 		return -1;
 	}
 
-	@Override
-	public IQuestLine getValue(Integer lineId) {
+	public static QuestLine getValue(Integer lineId) {
 		return questLines.get(lineId);
 	}
 
-	@Override
-	public List<IQuestLine> getAllValues() {
-		List<IQuestLine> list = new ArrayList<>(questLines.values());
-		list.sort(new QuestLineSortByValue(this));
+	public static List<QuestLine> getAllValues() {
+		List<QuestLine> list = new ArrayList<>(questLines.values());
+		list.sort(new QuestLineSortByValue());
 		return list;
 	}
 
-	@Override
-	public List<Integer> getAllKeys() {
-		List<Integer> list = new ArrayList<>(((Map<Integer, IQuestLine>) questLines).keySet());
-		list.sort(new QuestLineSortByKey(this));
+	public static List<Integer> getAllKeys() {
+		List<Integer> list = new ArrayList<>(((Map<Integer, QuestLine>) questLines).keySet());
+		list.sort(new QuestLineSortByKey());
 		return list;
 	}
 
-	@Override
-	public int size() {
+	public static int size() {
 		return questLines.size();
 	}
 
-	@Override
-	public void reset() {
+	public static void reset() {
 		questLines.clear();
 	}
 
-	@Override
-	public QuestingPacket getSyncPacket() {
+	public static QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject base = new JsonObject();
 		base.add("questLines", writeToJson(new JsonArray(), EnumSaveType.CONFIG));
@@ -126,18 +108,16 @@ public final class QuestLineDatabase implements IQuestLineDatabase {
 		return new QuestingPacket(PacketTypeNative.LINE_DATABASE.GetLocation(), tags);
 	}
 
-	@Override
-	public void readPacket(NBTTagCompound payload) {
+	public static void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
-		this.readFromJson(JsonHelper.GetArray(base, "questLines"), EnumSaveType.CONFIG);
+		readFromJson(JsonHelper.GetArray(base, "questLines"), EnumSaveType.CONFIG);
 	}
 
-	@Override
-	public JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
+	public static JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
 		if(saveType != EnumSaveType.CONFIG) {
 			return json;
 		}
-		for(Entry<Integer, IQuestLine> entry : questLines.entrySet()) {
+		for(Entry<Integer, QuestLine> entry : questLines.entrySet()) {
 			if(entry.getValue() == null) {
 				continue;
 			}
@@ -150,21 +130,20 @@ public final class QuestLineDatabase implements IQuestLineDatabase {
 		return json;
 	}
 
-	@Override
-	public void readFromJson(JsonArray json, EnumSaveType saveType) {
+	public static void readFromJson(JsonArray json, EnumSaveType saveType) {
 		if(saveType != EnumSaveType.CONFIG) {
 			return;
 		}
 		questLines.clear();
-		ArrayList<IQuestLine> unassigned = new ArrayList<>();
+		ArrayList<QuestLine> unassigned = new ArrayList<>();
 		HashMap<Integer, Integer> orderMap = new HashMap<>();
 		for(JsonElement entry : json) {
 			if(entry == null || !entry.isJsonObject()) {
 				continue;
 			}
 			JsonObject jql = entry.getAsJsonObject();
-			int id = JsonHelper.GetNumber(jql, "lineID", -1).intValue();
-			int order = JsonHelper.GetNumber(jql, "order", -1).intValue();
+			int id = JsonHelper.GetInt(jql, "lineID", -1);
+			int order = JsonHelper.GetInt(jql, "order", -1);
 			QuestLine line = new QuestLine();
 			line.readFromJson(entry.getAsJsonObject(), saveType);
 			if(id >= 0) {
@@ -176,8 +155,8 @@ public final class QuestLineDatabase implements IQuestLineDatabase {
 				orderMap.put(order, id);
 			}
 		}
-		for(IQuestLine q : unassigned) {
-			questLines.put(this.nextKey(), q);
+		for(QuestLine q : unassigned) {
+			questLines.put(nextKey(), q);
 		}
 		List<Integer> orderKeys = new ArrayList<>(orderMap.keySet());
 		Collections.sort(orderKeys);

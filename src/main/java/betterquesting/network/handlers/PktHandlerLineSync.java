@@ -1,16 +1,16 @@
 package betterquesting.network.handlers;
 
-import betterquesting.api.events.DatabaseEvent;
+import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.network.IPacketHandler;
-import betterquesting.api.questing.IQuestLine;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestLine;
 import betterquesting.questing.QuestLineDatabase;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
 
 public class PktHandlerLineSync implements IPacketHandler {
 	@Override
@@ -24,21 +24,24 @@ public class PktHandlerLineSync implements IPacketHandler {
 			return;
 		}
 		int id = !tag.hasKey("lineID") ? -1 : tag.getInteger("lineID");
-		IQuestLine questLine = QuestLineDatabase.INSTANCE.getValue(id);
+		QuestLine questLine = QuestLineDatabase.getValue(id);
 		if(questLine != null) {
-			PacketSender.INSTANCE.sendToPlayer(questLine.getSyncPacket(), sender);
+			PacketSender.sendToPlayer(questLine.getSyncPacket(), sender);
 		}
 	}
 
 	@Override
 	public void handleClient(NBTTagCompound tag) {
 		int id = !tag.hasKey("lineID") ? -1 : tag.getInteger("lineID");
-		IQuestLine questLine = QuestLineDatabase.INSTANCE.getValue(id);
+		QuestLine questLine = QuestLineDatabase.getValue(id);
 		if(questLine == null) {
 			questLine = new QuestLine();
-			QuestLineDatabase.INSTANCE.add(questLine, id);
+			QuestLineDatabase.add(questLine, id);
 		}
 		questLine.readPacket(tag);
-		MinecraftForge.EVENT_BUS.post(new DatabaseEvent.Update());
+		GuiScreen screen = Minecraft.getMinecraft().currentScreen;
+		if(screen instanceof INeedsRefresh) {
+			((INeedsRefresh) screen).refreshGui();
+		}
 	}
 }

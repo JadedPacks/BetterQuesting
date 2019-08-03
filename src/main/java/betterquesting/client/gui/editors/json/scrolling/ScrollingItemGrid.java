@@ -3,6 +3,7 @@ package betterquesting.client.gui.editors.json.scrolling;
 import betterquesting.api.client.gui.GuiElement;
 import betterquesting.api.client.gui.lists.IScrollingEntry;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.client.themes.ThemeStandard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.MathHelper;
@@ -48,7 +49,7 @@ public class ScrollingItemGrid extends GuiElement implements IScrollingEntry {
 				ItemStack stack = itemList.get(idx);
 				GL11.glPushMatrix();
 				GL11.glColor4f(1F, 1F, 1F, 1F);
-				mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+				mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 				drawTexturedModalRect(px + i * 18, py + j * 18, 0, 48, 18, 18);
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
 				RenderUtils.RenderItemStack(mc, stack, px + i * 18 + 1, py + j * 18 + 1, stack.stackSize > 1 ? "" + stack.stackSize : "");
@@ -59,7 +60,7 @@ public class ScrollingItemGrid extends GuiElement implements IScrollingEntry {
 	}
 
 	@Override
-	public void drawForeground(int mx, int my, int px, int py, int width) {
+	public void drawForeground(int mx, int my) {
 		ItemStack stack = getStackUnderMouse(mx, my);
 		if(stack != null) {
 			this.drawTooltip(stack.getTooltip(mc.thePlayer, mc.gameSettings.advancedItemTooltips), mx, my, mc.fontRendererObj);
@@ -67,7 +68,7 @@ public class ScrollingItemGrid extends GuiElement implements IScrollingEntry {
 	}
 
 	@Override
-	public void onMouseClick(int mx, int my, int px, int py, int click, int index) {}
+	public void onMouseClick(int mx, int my, int click) {}
 
 	public ItemStack getStackUnderMouse(int mx, int my) {
 		int idx = mouseToIndex(mx, my);

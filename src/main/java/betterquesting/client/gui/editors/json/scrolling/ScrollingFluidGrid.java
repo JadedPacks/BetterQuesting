@@ -3,6 +3,7 @@ package betterquesting.client.gui.editors.json.scrolling;
 import betterquesting.api.client.gui.GuiElement;
 import betterquesting.api.client.gui.lists.IScrollingEntry;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.client.themes.ThemeStandard;
 import com.mojang.realmsclient.gui.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureMap;
@@ -51,7 +52,7 @@ public class ScrollingFluidGrid extends GuiElement implements IScrollingEntry {
 				FluidStack stack = itemList.get(idx);
 				GL11.glPushMatrix();
 				GL11.glColor4f(1F, 1F, 1F, 1F);
-				mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+				mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 				drawTexturedModalRect(px + i * 18, py + j * 18, 0, 48, 18, 18);
 				GL11.glEnable(GL11.GL_DEPTH_TEST);
 				try {
@@ -70,7 +71,7 @@ public class ScrollingFluidGrid extends GuiElement implements IScrollingEntry {
 	}
 
 	@Override
-	public void drawForeground(int mx, int my, int px, int py, int width) {
+	public void drawForeground(int mx, int my) {
 		FluidStack stack = getStackUnderMouse(mx, my);
 		if(stack != null) {
 			ArrayList<String> tt = new ArrayList<>();
@@ -81,7 +82,7 @@ public class ScrollingFluidGrid extends GuiElement implements IScrollingEntry {
 	}
 
 	@Override
-	public void onMouseClick(int mx, int my, int px, int py, int click, int index) {}
+	public void onMouseClick(int mx, int my, int click) {}
 
 	public FluidStack getStackUnderMouse(int mx, int my) {
 		int idx = mouseToIndex(mx, my);

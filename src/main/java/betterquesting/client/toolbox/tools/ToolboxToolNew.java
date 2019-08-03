@@ -6,16 +6,11 @@ import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.IQuest;
-import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.client.toolbox.ToolboxGuiMain;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
-import betterquesting.questing.QuestDatabase;
-import betterquesting.questing.QuestInstance;
-import betterquesting.questing.QuestLineDatabase;
-import betterquesting.questing.QuestLineEntry;
+import betterquesting.questing.*;
 import com.google.gson.JsonObject;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.NBTTagCompound;
@@ -31,7 +26,7 @@ public class ToolboxToolNew implements IToolboxTool {
 	}
 
 	@Override
-	public void drawTool(int mx, int my, float partialTick) {
+	public void drawTool(int mx, int my) {
 		if(nQuest == null) {
 			return;
 		}
@@ -64,10 +59,10 @@ public class ToolboxToolNew implements IToolboxTool {
 		int modY = ((my % snap) + snap) % snap;
 		mx -= modX;
 		my -= modY;
-		IQuestLine qLine = gui.getQuestLine().getQuestLine();
-		IQuest quest = new QuestInstance();
-		int qID = QuestDatabase.INSTANCE.nextKey();
-		int lID = QuestLineDatabase.INSTANCE.getKey(qLine);
+		QuestLine qLine = gui.getQuestLine().getQuestLine();
+		QuestInstance quest = new QuestInstance();
+		int qID = QuestDatabase.nextKey();
+		int lID = QuestLineDatabase.getKey(qLine);
 		QuestLineEntry qe = new QuestLineEntry(mx, my, 24);
 		qLine.add(qe, qID);
 		NBTTagCompound tag1 = new NBTTagCompound();
@@ -76,21 +71,15 @@ public class ToolboxToolNew implements IToolboxTool {
 		tag1.setTag("data", NBTConverter.JSONtoNBT_Object(base1, new NBTTagCompound()));
 		tag1.setInteger("action", EnumPacketAction.ADD.ordinal());
 		tag1.setInteger("questID", qID);
-		PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag1));
+		PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag1));
 		NBTTagCompound tag2 = new NBTTagCompound();
 		JsonObject base2 = new JsonObject();
 		base2.add("line", qLine.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
 		tag2.setTag("data", NBTConverter.JSONtoNBT_Object(base2, new NBTTagCompound()));
 		tag2.setInteger("action", EnumPacketAction.EDIT.ordinal());
 		tag2.setInteger("lineID", lID);
-		PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tag2));
+		PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tag2));
 	}
-
-	@Override
-	public void onMouseScroll(int mx, int my, int scroll) {}
-
-	@Override
-	public void onKeyPressed(char c, int keyCode) {}
 
 	@Override
 	public boolean allowTooltips() {
@@ -100,11 +89,6 @@ public class ToolboxToolNew implements IToolboxTool {
 	@Override
 	public boolean allowScrolling(int click) {
 		return click == 2;
-	}
-
-	@Override
-	public boolean allowZoom() {
-		return true;
 	}
 
 	@Override

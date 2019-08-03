@@ -1,11 +1,11 @@
 package betterquesting.api.utils;
 
-import betterquesting.api.api.QuestingAPI;
-import betterquesting.api.placeholders.PlaceholderConverter;
+import betterquesting.core.BetterQuesting;
 import com.google.gson.*;
+import com.google.gson.internal.Streams;
+import com.google.gson.stream.JsonWriter;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
-import net.minecraft.init.Blocks;
 import net.minecraft.item.Item;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.world.World;
@@ -15,7 +15,6 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.oredict.OreDictionary;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
@@ -26,9 +25,8 @@ public class JsonHelper {
 		}
 		if(json.has(id) && json.get(id).isJsonArray()) {
 			return json.get(id).getAsJsonArray();
-		} else {
-			return new JsonArray();
 		}
+		return new JsonArray();
 	}
 
 	public static JsonObject GetObject(JsonObject json, String id) {
@@ -37,9 +35,8 @@ public class JsonHelper {
 		}
 		if(json.has(id) && json.get(id).isJsonObject()) {
 			return json.get(id).getAsJsonObject();
-		} else {
-			return new JsonObject();
 		}
+		return new JsonObject();
 	}
 
 	public static String GetString(JsonObject json, String id, String def) {
@@ -48,24 +45,36 @@ public class JsonHelper {
 		}
 		if(json.has(id) && json.get(id).isJsonPrimitive() && json.get(id).getAsJsonPrimitive().isString()) {
 			return json.get(id).getAsString();
-		} else {
-			return def;
 		}
+		return def;
 	}
 
-	public static Number GetNumber(JsonObject json, String id, Number def) {
+	public static int GetInt(JsonObject json, String id, int def) {
 		if(json == null) {
 			return def;
 		}
 		if(json.has(id) && json.get(id).isJsonPrimitive()) {
 			try {
-				return json.get(id).getAsNumber();
+				return json.get(id).getAsInt();
 			} catch(Exception e) {
 				return def;
 			}
-		} else {
+		}
+		return def;
+	}
+
+	public static long GetLong(JsonObject json, String id, long def) {
+		if(json == null) {
 			return def;
 		}
+		if(json.has(id) && json.get(id).isJsonPrimitive()) {
+			try {
+				return json.get(id).getAsLong();
+			} catch(Exception e) {
+				return def;
+			}
+		}
+		return def;
 	}
 
 	public static boolean GetBoolean(JsonObject json, String id, boolean def) {
@@ -78,20 +87,28 @@ public class JsonHelper {
 			} catch(Exception e) {
 				return def;
 			}
-		} else {
+		}
+		return def;
+	}
+
+	public static <E extends Enum<E>> E GetEnum(JsonObject json, String id, E def) {
+		if(json == null) {
 			return def;
 		}
+		if(json.has(id) && json.get(id).isJsonPrimitive()) {
+			try {
+				return Enum.valueOf(def.getDeclaringClass(), json.getAsString());
+			} catch(Exception e) {
+				return def;
+			}
+		}
+		return def;
 	}
 
 	public static ArrayList<JsonElement> GetUnderlyingArray(JsonArray array) {
-		try {
-			Field field = JsonArray.class.getDeclaredField("elements");
-			field.setAccessible(true);
-			return (ArrayList<JsonElement>) field.get(array);
-		} catch(Exception e) {
-			QuestingAPI.getLogger().error("Unable to retrieve underlying JsonArray:", e);
-		}
-		return null;
+		ArrayList<JsonElement> list = new ArrayList<>();
+		array.iterator().forEachRemaining(list::add);
+		return list;
 	}
 
 	public static JsonObject ReadFromFile(File file) {
@@ -104,14 +121,14 @@ public class JsonHelper {
 			fr.close();
 			return json;
 		} catch(Exception e) {
-			QuestingAPI.getLogger().error("An error occured while loading JSON from file:", e);
+			BetterQuesting.logger.error("An error occured while loading JSON from file:", e);
 			int i = 0;
 			File bkup = new File(file.getParent(), "malformed_" + file.getName() + i + ".json");
 			while(bkup.exists()) {
 				i++;
 				bkup = new File(file.getParent(), "malformed_" + file.getName() + i + ".json");
 			}
-			QuestingAPI.getLogger().error("Creating backup at: " + bkup.getAbsolutePath());
+			BetterQuesting.logger.error("Creating backup at: " + bkup.getAbsolutePath());
 			CopyPaste(file, bkup);
 			return new JsonObject();
 		}
@@ -126,22 +143,26 @@ public class JsonHelper {
 				file.createNewFile();
 			}
 			OutputStreamWriter fw = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
-			new GsonBuilder().setPrettyPrinting().create().toJson(jObj, fw);
+			JsonWriter jsonWriter = new JsonWriter(Streams.writerForAppendable(fw));
+			jsonWriter.setIndent("\t");
+			jsonWriter.setSerializeNulls(false);
+			new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create().toJson(jObj, jsonWriter);
 			fw.close();
 		} catch(Exception e) {
-			QuestingAPI.getLogger().error("An error occured while saving JSON to file:", e);
+			BetterQuesting.logger.error("An error occured while saving JSON to file:", e);
 		}
 	}
 
 	public static void CopyPaste(File fileIn, File fileOut) {
-		try(BufferedReader fr = new BufferedReader(new InputStreamReader(new FileInputStream(fileIn), StandardCharsets.UTF_8)); BufferedWriter fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileOut), StandardCharsets.UTF_8))) {
+		try(BufferedReader fr = new BufferedReader(new InputStreamReader(new FileInputStream(fileIn), StandardCharsets.UTF_8));
+		    BufferedWriter fw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileOut), StandardCharsets.UTF_8))) {
 			char[] buffer = new char[256];
 			int read;
 			while((read = fr.read(buffer)) != -1) {
 				fw.write(buffer, 0, read);
 			}
 		} catch(Exception e1) {
-			QuestingAPI.getLogger().error("Failed copy paste", e1);
+			BetterQuesting.logger.error("Failed copy paste", e1);
 		}
 	}
 
@@ -157,7 +178,7 @@ public class JsonHelper {
 	}
 
 	public static boolean isFluid(JsonObject json) {
-		return json != null && json.has("FluidName") && json.has("Amount") && FluidRegistry.getFluid(GetString(json, "FluidName", "")) != null;
+		return json != null && json.has("FluidName") && FluidRegistry.getFluid(GetString(json, "FluidName", "")) != null;
 	}
 
 	public static boolean isEntity(JsonObject json) {
@@ -166,25 +187,19 @@ public class JsonHelper {
 	}
 
 	public static BigItemStack JsonToItemStack(JsonObject json) {
-		if(json == null || !json.has("id") || !json.get("id").isJsonPrimitive()) {
-			return new BigItemStack(Blocks.stone);
+		Item item = (Item) Item.itemRegistry.getObject(JsonHelper.GetString(json, "id", "minecraft:stone"));
+		if(item == null) {
+			return null;
 		}
-		JsonPrimitive jID = json.get("id").getAsJsonPrimitive();
-		int count = JsonHelper.GetNumber(json, "Count", 1).intValue();
-		String oreDict = JsonHelper.GetString(json, "OreDict", "");
-		int damage = JsonHelper.GetNumber(json, "Damage", OreDictionary.WILDCARD_VALUE).intValue();
-		damage = damage >= 0 ? damage : OreDictionary.WILDCARD_VALUE;
-		Item item;
-		if(jID.isNumber()) {
-			item = (Item) Item.itemRegistry.getObjectById(jID.getAsInt()); // Old format (numbers)
-		} else {
-			item = (Item) Item.itemRegistry.getObject(jID.getAsString()); // New format (names)
+		int damage = JsonHelper.GetInt(json, "Damage", 0);
+		BigItemStack stack = new BigItemStack(item, JsonHelper.GetInt(json, "Count", 1), damage >= 0 ? damage : OreDictionary.WILDCARD_VALUE);
+		if(json.has("OreDict")) {
+			stack.oreDict = JsonHelper.GetString(json, "OreDict", "");
 		}
-		NBTTagCompound tags = null;
 		if(json.has("tag")) {
-			tags = NBTConverter.JSONtoNBT_Object(JsonHelper.GetObject(json, "tag"), new NBTTagCompound(), true);
+			stack.SetTagCompound(NBTConverter.JSONtoNBT_Object(JsonHelper.GetObject(json, "tag"), new NBTTagCompound(), true));
 		}
-		return PlaceholderConverter.convertItem(item, jID.getAsString(), count, damage, oreDict, tags);
+		return stack;
 	}
 
 	public static JsonObject ItemStackToJson(BigItemStack stack, JsonObject json) {
@@ -192,9 +207,18 @@ public class JsonHelper {
 			return json;
 		}
 		json.addProperty("id", Item.itemRegistry.getNameForObject(stack.getBaseStack().getItem()));
-		json.addProperty("Count", stack.stackSize);
-		json.addProperty("OreDict", stack.oreDict);
-		json.addProperty("Damage", stack.getBaseStack().getMetadata());
+		int size = stack.stackSize;
+		if(size != 1) {
+			json.addProperty("Count", size);
+		}
+		String ore = stack.oreDict;
+		if(!ore.equals("")) {
+			json.addProperty("OreDict", ore);
+		}
+		int meta = stack.getBaseStack().getMetadata();
+		if(meta != 0) {
+			json.addProperty("Damage", meta);
+		}
 		if(stack.HasTagCompound()) {
 			json.add("tag", NBTConverter.NBTtoJSON_Compound(stack.GetTagCompound(), new JsonObject(), true));
 		}
@@ -202,14 +226,15 @@ public class JsonHelper {
 	}
 
 	public static FluidStack JsonToFluidStack(JsonObject json) {
-		String name = GetString(json, "FluidName", "water");
-		int amount = GetNumber(json, "Amount", 1000).intValue();
-		NBTTagCompound tags = null;
-		if(json.has("Tag")) {
-			tags = NBTConverter.JSONtoNBT_Object(GetObject(json, "Tag"), new NBTTagCompound(), true);
+		Fluid fluid = FluidRegistry.getFluid(GetString(json, "FluidName", "water"));
+		if(fluid == null) {
+			return null;
 		}
-		Fluid fluid = FluidRegistry.getFluid(name);
-		return PlaceholderConverter.convertFluid(fluid, name, amount, tags);
+		FluidStack stack = new FluidStack(fluid, GetInt(json, "Amount", 1000));
+		if(json.has("Tag")) {
+			stack.tag = NBTConverter.JSONtoNBT_Object(GetObject(json, "Tag"), new NBTTagCompound(), true);
+		}
+		return stack;
 	}
 
 	public static JsonObject FluidStackToJson(FluidStack stack, JsonObject json) {
@@ -226,11 +251,10 @@ public class JsonHelper {
 
 	public static Entity JsonToEntity(JsonObject json, World world) {
 		NBTTagCompound tags = NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound(), true);
-		Entity entity = null;
 		if(tags.hasKey("id") && EntityList.stringToClassMapping.containsKey(tags.getString("id"))) {
-			entity = EntityList.createEntityFromNBT(tags, world);
+			return EntityList.createEntityFromNBT(tags, world);
 		}
-		return PlaceholderConverter.convertEntity(entity, world, tags);
+		return null;
 	}
 
 	public static JsonObject EntityToJson(Entity entity, JsonObject json) {

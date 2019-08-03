@@ -1,9 +1,6 @@
 package betterquesting.questing.tasks;
 
 import betterquesting.api.enums.EnumSaveType;
-import betterquesting.api.misc.IJsonSaveLoad;
-import betterquesting.api.placeholders.tasks.FactoryTaskPlaceholder;
-import betterquesting.api.placeholders.tasks.TaskPlaceholder;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.storage.IRegStorageBase;
 import betterquesting.api.utils.JsonHelper;
@@ -17,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 
-public class TaskStorage implements IRegStorageBase<Integer, ITask>, IJsonSaveLoad<JsonArray> {
+public class TaskStorage implements IRegStorageBase<Integer, ITask> {
 	private final HashMap<Integer, ITask> database = new HashMap<>();
 
 	@Override
@@ -83,7 +80,6 @@ public class TaskStorage implements IRegStorageBase<Integer, ITask>, IJsonSaveLo
 		database.clear();
 	}
 
-	@Override
 	public JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
 		switch(saveType) {
 			case CONFIG:
@@ -98,7 +94,6 @@ public class TaskStorage implements IRegStorageBase<Integer, ITask>, IJsonSaveLo
 		return json;
 	}
 
-	@Override
 	public void readFromJson(JsonArray json, EnumSaveType saveType) {
 		switch(saveType) {
 			case CONFIG:
@@ -117,50 +112,22 @@ public class TaskStorage implements IRegStorageBase<Integer, ITask>, IJsonSaveLo
 			ResourceLocation taskID = entry.getValue().getFactoryID();
 			JsonObject qJson = entry.getValue().writeToJson(new JsonObject(), EnumSaveType.CONFIG);
 			qJson.addProperty("taskID", taskID.toString());
-			qJson.addProperty("index", entry.getKey());
 			json.add(qJson);
 		}
 	}
 
 	private void readFromJson_Config(JsonArray json) {
 		database.clear();
-		ArrayList<ITask> unassigned = new ArrayList<>();
 		for(JsonElement entry : json) {
 			if(entry == null || !entry.isJsonObject()) {
 				continue;
 			}
 			JsonObject jsonTask = entry.getAsJsonObject();
-			ResourceLocation loc = new ResourceLocation(JsonHelper.GetString(jsonTask, "taskID", ""));
-			int index = JsonHelper.GetNumber(jsonTask, "index", -1).intValue();
-			ITask task = TaskRegistry.INSTANCE.createTask(loc);
-			if(task instanceof TaskPlaceholder) {
-				JsonObject jt2 = JsonHelper.GetObject(jsonTask, "orig_data");
-				ResourceLocation loc2 = new ResourceLocation(JsonHelper.GetString(jt2, "taskID", ""));
-				ITask t2 = TaskRegistry.INSTANCE.createTask(loc2);
-				if(t2 != null) {
-					jsonTask = jt2;
-					task = t2;
-				}
-			}
+			ITask task = TaskRegistry.INSTANCE.createTask(new ResourceLocation(JsonHelper.GetString(jsonTask, "taskID", "")));
 			if(task != null) {
 				task.readFromJson(jsonTask, EnumSaveType.CONFIG);
-				if(index >= 0) {
-					add(task, index);
-				} else {
-					unassigned.add(task);
-				}
-			} else {
-				TaskPlaceholder tph = new TaskPlaceholder();
-				tph.setTaskData(jsonTask, EnumSaveType.CONFIG);
-				if(index >= 0) {
-					add(tph, index);
-				} else {
-					unassigned.add(tph);
-				}
+				add(task, nextKey());
 			}
-		}
-		for(ITask t : unassigned) {
-			add(t, nextKey());
 		}
 	}
 
@@ -169,7 +136,6 @@ public class TaskStorage implements IRegStorageBase<Integer, ITask>, IJsonSaveLo
 			ResourceLocation taskID = entry.getValue().getFactoryID();
 			JsonObject qJson = entry.getValue().writeToJson(new JsonObject(), EnumSaveType.PROGRESS);
 			qJson.addProperty("taskID", taskID.toString());
-			qJson.addProperty("index", entry.getKey());
 			json.add(qJson);
 		}
 	}
@@ -181,20 +147,10 @@ public class TaskStorage implements IRegStorageBase<Integer, ITask>, IJsonSaveLo
 				continue;
 			}
 			JsonObject jsonTask = entry.getAsJsonObject();
-			int index = JsonHelper.GetNumber(jsonTask, "index", -1).intValue();
-			ResourceLocation loc = new ResourceLocation(JsonHelper.GetString(jsonTask, "taskID", ""));
-			ITask task = getValue(index);
-			if(task instanceof TaskPlaceholder) {
-				if(!task.getFactoryID().equals(loc)) {
-					((TaskPlaceholder) task).setTaskData(jsonTask, EnumSaveType.PROGRESS);
-				} else {
+			ITask task = getValue(i);
+			if(task != null) {
+				if(task.getFactoryID().equals(new ResourceLocation(JsonHelper.GetString(jsonTask, "taskID", "")))) {
 					task.readFromJson(jsonTask, EnumSaveType.PROGRESS);
-				}
-			} else if(task != null) {
-				if(task.getFactoryID().equals(loc)) {
-					task.readFromJson(jsonTask, EnumSaveType.PROGRESS);
-				} else if(FactoryTaskPlaceholder.INSTANCE.getRegistryName().equals(loc)) {
-					task.readFromJson(JsonHelper.GetObject(jsonTask, "orig_prog"), EnumSaveType.PROGRESS);
 				}
 			}
 		}

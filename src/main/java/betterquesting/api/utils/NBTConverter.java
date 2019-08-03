@@ -1,6 +1,6 @@
 package betterquesting.api.utils;
 
-import betterquesting.api.api.QuestingAPI;
+import betterquesting.core.BetterQuesting;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -99,7 +99,7 @@ public class NBTConverter {
 					key = key.substring(0, key.lastIndexOf(":" + id));
 				} catch(Exception e) {
 					if(tags.hasKey(key)) {
-						QuestingAPI.getLogger().warn("JSON/NBT formatting conflict on key '" + key + "'. Skipping...");
+						BetterQuesting.logger.warn("JSON/NBT formatting conflict on key '" + key + "'. Skipping...");
 						continue;
 					}
 				}
@@ -156,9 +156,9 @@ public class NBTConverter {
 				return tList;
 			}
 		} catch(Exception e) {
-			QuestingAPI.getLogger().error("An error occured while parsing JsonElement to NBTBase (" + tagID + "):", e);
+			BetterQuesting.logger.error("An error occured while parsing JsonElement to NBTBase (" + tagID + "):", e);
 		}
-		QuestingAPI.getLogger().warn("Unknown NBT representation for " + jObj.toString() + " (ID: " + tagID + ")");
+		BetterQuesting.logger.warn("Unknown NBT representation for " + jObj.toString() + " (ID: " + tagID + ")");
 		return new NBTTagString();
 	}
 

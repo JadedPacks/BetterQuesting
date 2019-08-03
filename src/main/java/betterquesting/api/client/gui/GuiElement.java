@@ -1,63 +1,37 @@
 package betterquesting.api.client.gui;
 
-import betterquesting.api.api.ApiReference;
-import betterquesting.api.api.QuestingAPI;
-import betterquesting.api.client.themes.ITheme;
-import betterquesting.api.placeholders.ThemeDummy;
+import betterquesting.client.themes.ThemeStandard;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.OpenGlHelper;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.util.IIcon;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
 
 import java.util.List;
 
 public abstract class GuiElement {
-	public float zLevel = 0F;
-
-	public static ITheme currentTheme() {
-		if(QuestingAPI.getAPI(ApiReference.THEME_REG) != null) {
-			return QuestingAPI.getAPI(ApiReference.THEME_REG).getCurrentTheme();
-		} else {
-			return ThemeDummy.INSTANCE;
-		}
-	}
+	public static float zLevel = 0F;
 
 	public static int getTextColor() {
-		return currentTheme().getTextColor();
-	}
-
-	public void drawCenteredString(FontRenderer font, String text, int x, int y, int color, boolean shadow) {
-		font.drawString(text, x - font.getStringWidth(text) / 2, y, color, shadow);
+		return ThemeStandard.getTextColor();
 	}
 
 	public void drawString(FontRenderer font, String text, int x, int y, int color, boolean shadow) {
 		font.drawString(text, x, y, color, shadow);
 	}
 
-	public void drawTexturedModalRect(int x, int y, int u, int v, int w, int h) {
+	public static void drawTexturedModalRect(int x, int y, int u, int v, int w, int h) {
 		float f = 0.00390625F;
 		float f1 = 0.00390625F;
 		Tessellator tessellator = Tessellator.instance;
 		tessellator.startDrawingQuads();
-		tessellator.addVertexWithUV(x, y + h, this.zLevel, (float) (u) * f, (float) (v + h) * f1);
-		tessellator.addVertexWithUV(x + w, y + h, this.zLevel, (float) (u + w) * f, (float) (v + h) * f1);
-		tessellator.addVertexWithUV(x + w, y, this.zLevel, (float) (u + w) * f, (float) (v) * f1);
-		tessellator.addVertexWithUV(x, y, this.zLevel, (float) (u) * f, (float) (v) * f1);
-		tessellator.draw();
-	}
-
-	public void drawTexturedModelRectFromIcon(int x, int y, IIcon icon, int w, int h) {
-		Tessellator tessellator = Tessellator.instance;
-		tessellator.startDrawingQuads();
-		tessellator.addVertexWithUV(x, y + h, this.zLevel, icon.getMinU(), icon.getMaxV());
-		tessellator.addVertexWithUV(x + w, y + h, this.zLevel, icon.getMaxU(), icon.getMaxV());
-		tessellator.addVertexWithUV(x + w, y, this.zLevel, icon.getMaxU(), icon.getMinV());
-		tessellator.addVertexWithUV(x, y, this.zLevel, icon.getMinU(), icon.getMinV());
+		tessellator.addVertexWithUV(x, y + h, zLevel, (float) (u) * f, (float) (v + h) * f1);
+		tessellator.addVertexWithUV(x + w, y + h, zLevel, (float) (u + w) * f, (float) (v + h) * f1);
+		tessellator.addVertexWithUV(x + w, y, zLevel, (float) (u + w) * f, (float) (v) * f1);
+		tessellator.addVertexWithUV(x, y, zLevel, (float) (u) * f, (float) (v) * f1);
 		tessellator.draw();
 	}
 
@@ -78,11 +52,11 @@ public abstract class GuiElement {
 		Tessellator tessellator = Tessellator.instance;
 		tessellator.startDrawingQuads();
 		tessellator.setColorRGBA_F(f1, f2, f3, f);
-		tessellator.addVertex(x2, y1, this.zLevel);
-		tessellator.addVertex(x1, y1, this.zLevel);
+		tessellator.addVertex(x2, y1, zLevel);
+		tessellator.addVertex(x1, y1, zLevel);
 		tessellator.setColorRGBA_F(f5, f6, f7, f4);
-		tessellator.addVertex(x1, y2, this.zLevel);
-		tessellator.addVertex(x2, y2, this.zLevel);
+		tessellator.addVertex(x1, y2, zLevel);
+		tessellator.addVertex(x2, y2, zLevel);
 		tessellator.draw();
 		GL11.glShadeModel(GL11.GL_FLAT);
 		GL11.glDisable(GL11.GL_BLEND);
@@ -123,7 +97,7 @@ public abstract class GuiElement {
 			if(k2 + i1 + 6 > sh) {
 				k2 = sh - i1 - 6;
 			}
-			this.zLevel = 300.0F;
+			zLevel = 300.0F;
 			int j1 = -267386864;
 			this.drawGradientRect(j2 - 3, k2 - 4, j2 + k + 3, k2 - 3, j1, j1);
 			this.drawGradientRect(j2 - 3, k2 + i1 + 3, j2 + k + 3, k2 + i1 + 4, j1, j1);
@@ -144,7 +118,7 @@ public abstract class GuiElement {
 				}
 				k2 += 10;
 			}
-			this.zLevel = 0.0F;
+			zLevel = 0.0F;
 			GL11.glEnable(GL11.GL_LIGHTING);
 			GL11.glEnable(GL11.GL_DEPTH_TEST);
 			RenderHelper.enableStandardItemLighting();

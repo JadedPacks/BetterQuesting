@@ -5,6 +5,8 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 
+import java.util.ArrayList;
+
 public class BigItemStack {
 	public int stackSize;
 	public String oreDict = "";
@@ -71,5 +73,18 @@ public class BigItemStack {
 		tags.setInteger("Count", stackSize);
 		tags.setString("OreDict", oreDict);
 		return tags;
+	}
+
+	public ArrayList<ItemStack> getCombinedStacks() {
+		ArrayList<ItemStack> list = new ArrayList<>();
+		int tmp1 = Math.max(1, stackSize);
+		while(tmp1 > 0) {
+			int size = Math.min(tmp1, baseStack.getMaxStackSize());
+			ItemStack stack = baseStack.copy();
+			stack.stackSize = size;
+			list.add(stack);
+			tmp1 -= size;
+		}
+		return list;
 	}
 }

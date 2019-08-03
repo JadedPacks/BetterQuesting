@@ -64,7 +64,7 @@ public class RenderUtils {
 		GL11.glPopMatrix();
 	}
 
-	public static void RenderEntity(int posX, int posY, int scale, float rotation, float pitch, Entity entity) {
+	public static void RenderEntity(int posX, int posY, int scale, float rotation, Entity entity) {
 		try {
 			GL11.glEnable(GL11.GL_COLOR_MATERIAL);
 			GL11.glPushMatrix();

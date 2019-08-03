@@ -2,8 +2,6 @@ package betterquesting.questing;
 
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.IQuest;
-import betterquesting.api.questing.IQuestDatabase;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.network.PacketTypeNative;
@@ -18,19 +16,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-public final class QuestDatabase implements IQuestDatabase {
-	public static final QuestDatabase INSTANCE = new QuestDatabase();
-	private final ConcurrentHashMap<Integer, IQuest> database = new ConcurrentHashMap<>();
+public final class QuestDatabase {
+	private static final ConcurrentHashMap<Integer, QuestInstance> database = new ConcurrentHashMap<>();
 
-	@Override
-	public IQuest createNew() {
-		IQuest q = new QuestInstance();
-		q.setParentDatabase(this);
-		return q;
+	public static QuestInstance createNew() {
+		return new QuestInstance();
 	}
 
-	@Override
-	public Integer nextKey() {
+	public static Integer nextKey() {
 		int id = 0;
 		while(database.containsKey(id)) {
 			id++;
@@ -38,42 +31,35 @@ public final class QuestDatabase implements IQuestDatabase {
 		return id;
 	}
 
-	@Override
-	public void add(IQuest obj, Integer id) {
+	public static void add(QuestInstance obj, Integer id) {
 		if(id < 0 || obj == null || database.containsKey(id) || database.containsValue(obj)) {
 			return;
 		}
-
-		obj.setParentDatabase(this);
 		database.put(id, obj);
 	}
 
-	@Override
-	public boolean removeKey(Integer id) {
-		IQuest remQ = database.remove(id);
+	public static boolean removeKey(Integer id) {
+		QuestInstance remQ = database.remove(id);
 		if(remQ == null) {
 			return false;
 		}
-		for(IQuest quest : this.getAllValues()) {
+		for(QuestInstance quest : getAllValues()) {
 			quest.getPrerequisites().remove(remQ);
 		}
-		QuestLineDatabase.INSTANCE.removeQuest(id);
+		QuestLineDatabase.removeQuest(id);
 		return true;
 	}
 
-	@Override
-	public boolean removeValue(IQuest quest) {
+	public static boolean removeValue(QuestInstance quest) {
 		return removeKey(getKey(quest));
 	}
 
-	@Override
-	public IQuest getValue(Integer id) {
+	public static QuestInstance getValue(Integer id) {
 		return database.get(id);
 	}
 
-	@Override
-	public Integer getKey(IQuest quest) {
-		for(Entry<Integer, IQuest> entry : database.entrySet()) {
+	public static Integer getKey(QuestInstance quest) {
+		for(Entry<Integer, QuestInstance> entry : database.entrySet()) {
 			if(entry.getValue() == quest) {
 				return entry.getKey();
 			}
@@ -81,28 +67,23 @@ public final class QuestDatabase implements IQuestDatabase {
 		return -1;
 	}
 
-	@Override
-	public List<IQuest> getAllValues() {
+	public static List<QuestInstance> getAllValues() {
 		return new ArrayList<>(database.values());
 	}
 
-	@Override
-	public List<Integer> getAllKeys() {
-		return new ArrayList<>(((Map<Integer, IQuest>) database).keySet());
+	public static List<Integer> getAllKeys() {
+		return new ArrayList<>(((Map<Integer, QuestInstance>) database).keySet());
 	}
 
-	@Override
-	public int size() {
+	public static int size() {
 		return database.size();
 	}
 
-	@Override
-	public void reset() {
+	public static void reset() {
 		database.clear();
 	}
 
-	@Override
-	public QuestingPacket getSyncPacket() {
+	public static QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject base = new JsonObject();
 		base.add("config", writeToJson(new JsonArray(), EnumSaveType.CONFIG));
@@ -111,15 +92,13 @@ public final class QuestDatabase implements IQuestDatabase {
 		return new QuestingPacket(PacketTypeNative.QUEST_DATABASE.GetLocation(), tags);
 	}
 
-	@Override
-	public void readPacket(NBTTagCompound payload) {
+	public static void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
 		readFromJson(JsonHelper.GetArray(base, "config"), EnumSaveType.CONFIG);
 		readFromJson(JsonHelper.GetArray(base, "progress"), EnumSaveType.PROGRESS);
 	}
 
-	@Override
-	public JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
+	public static JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
 		switch(saveType) {
 			case CONFIG:
 				writeToJson_Config(json);
@@ -133,8 +112,7 @@ public final class QuestDatabase implements IQuestDatabase {
 		return json;
 	}
 
-	@Override
-	public void readFromJson(JsonArray json, EnumSaveType saveType) {
+	public static void readFromJson(JsonArray json, EnumSaveType saveType) {
 		switch(saveType) {
 			case CONFIG:
 				readFromJson_Config(json);
@@ -147,8 +125,8 @@ public final class QuestDatabase implements IQuestDatabase {
 		}
 	}
 
-	private void writeToJson_Config(JsonArray json) {
-		for(Entry<Integer, IQuest> entry : database.entrySet()) {
+	private static void writeToJson_Config(JsonArray json) {
+		for(Entry<Integer, QuestInstance> entry : database.entrySet()) {
 			JsonObject jq = new JsonObject();
 			entry.getValue().writeToJson(jq, EnumSaveType.CONFIG);
 			jq.addProperty("questID", entry.getKey());
@@ -156,25 +134,25 @@ public final class QuestDatabase implements IQuestDatabase {
 		}
 	}
 
-	private void readFromJson_Config(JsonArray json) {
+	private static void readFromJson_Config(JsonArray json) {
 		database.clear();
 		for(JsonElement entry : json) {
 			if(entry == null || !entry.isJsonObject()) {
 				continue;
 			}
-			int qID = JsonHelper.GetNumber(entry.getAsJsonObject(), "questID", -1).intValue();
+			int qID = JsonHelper.GetInt(entry.getAsJsonObject(), "questID", -1);
 			if(qID < 0) {
 				continue;
 			}
-			IQuest quest = getValue(qID);
-			quest = quest != null ? quest : this.createNew();
+			QuestInstance quest = getValue(qID);
+			quest = quest != null ? quest : createNew();
 			quest.readFromJson(entry.getAsJsonObject(), EnumSaveType.CONFIG);
 			database.put(qID, quest);
 		}
 	}
 
-	private void writeToJson_Progress(JsonArray json) {
-		for(Entry<Integer, IQuest> entry : database.entrySet()) {
+	private static void writeToJson_Progress(JsonArray json) {
+		for(Entry<Integer, QuestInstance> entry : database.entrySet()) {
 			JsonObject jq = new JsonObject();
 			entry.getValue().writeToJson(jq, EnumSaveType.PROGRESS);
 			jq.addProperty("questID", entry.getKey());
@@ -182,16 +160,16 @@ public final class QuestDatabase implements IQuestDatabase {
 		}
 	}
 
-	private void readFromJson_Progress(JsonArray json) {
+	private static void readFromJson_Progress(JsonArray json) {
 		for(JsonElement entry : json) {
 			if(entry == null || !entry.isJsonObject()) {
 				continue;
 			}
-			int qID = JsonHelper.GetNumber(entry.getAsJsonObject(), "questID", -1).intValue();
+			int qID = JsonHelper.GetInt(entry.getAsJsonObject(), "questID", -1);
 			if(qID < 0) {
 				continue;
 			}
-			IQuest quest = getValue(qID);
+			QuestInstance quest = getValue(qID);
 			if(quest != null) {
 				quest.readFromJson(entry.getAsJsonObject(), EnumSaveType.PROGRESS);
 			}

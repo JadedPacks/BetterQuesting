@@ -79,10 +79,6 @@ public class GuiButtonJson<T extends JsonElement> extends GuiButtonStorage<T> {
 		return isItem;
 	}
 
-	public boolean isFluid() {
-		return isFluid;
-	}
-
 	public boolean isEntity() {
 		return isEntity;
 	}

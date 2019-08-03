@@ -6,7 +6,6 @@ import betterquesting.api.client.gui.controls.GuiButtonJson;
 import betterquesting.api.client.gui.controls.GuiButtonThemed;
 import betterquesting.api.client.gui.controls.GuiNumberField;
 import betterquesting.api.client.gui.lists.IScrollingEntry;
-import betterquesting.api.jdoc.IJsonDoc;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.client.gui.editors.json.*;
 import betterquesting.client.gui.editors.json.callback.JsonEntityCallback;
@@ -18,7 +17,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiTextField;
-import net.minecraft.client.resources.I18n;
 import net.minecraft.util.MathHelper;
 
 import java.awt.*;
@@ -28,42 +26,29 @@ import java.util.List;
 public class ScrollingJsonEntry extends GuiElement implements IScrollingEntry {
 	private final GuiScrollingJson host;
 	private final JsonElement json;
-	private final IJsonDoc jDoc;
-	private String name = "", desc = "", key = "";
+	private final String name;
+	private String key = "";
 	private int idx = -1;
 	private final JsonElement je;
-	private final boolean allowEdit;
 	private GuiTextField txtMain;
 	private final Minecraft mc;
 	private final List<GuiButtonThemed> btnList = new ArrayList<>();
 
-	public ScrollingJsonEntry(GuiScrollingJson host, JsonObject json, String key, IJsonDoc jDoc, boolean allowEdit) {
+	public ScrollingJsonEntry(GuiScrollingJson host, JsonObject json, String key) {
 		this.mc = Minecraft.getMinecraft();
 		this.host = host;
 		this.json = json;
 		this.key = key;
-		this.jDoc = jDoc;
 		this.name = key;
-		if(jDoc != null) {
-			String uln = jDoc.getUnlocalisedName(name);
-			String ln = I18n.format(uln);
-			if(!ln.equalsIgnoreCase(uln)) {
-				this.name = ln;
-				this.desc = I18n.format(jDoc.getUnlocalisedDesc(key));
-			}
-		}
 		this.je = json.get(key);
-		this.allowEdit = allowEdit;
 	}
 
-	public ScrollingJsonEntry(GuiScrollingJson host, JsonArray json, int index, IJsonDoc jDoc, boolean allowEdit) {
+	public ScrollingJsonEntry(GuiScrollingJson host, JsonArray json, int index) {
 		this.mc = Minecraft.getMinecraft();
 		this.host = host;
 		this.json = json;
 		this.idx = index;
-		this.jDoc = jDoc;
 		this.je = index < 0 || index >= json.size() ? null : json.get(index);
-		this.allowEdit = allowEdit;
 		this.name = je == null ? "" : ("#" + index);
 	}
 
@@ -71,19 +56,15 @@ public class ScrollingJsonEntry extends GuiElement implements IScrollingEntry {
 		btnList.clear();
 		int margin = px + (width / 3);
 		int ctrlSpace = MathHelper.ceiling_float_int((width / 3F) * 2F);
-		int n = 0;
-		if(allowEdit && je != null) {
-			n = 20;
-			GuiButtonThemed btnDel = new GuiButtonThemed(3, px + width - n, 0, 20, 20, "x");
+		int n = 40;
+		if(je != null) {
+			GuiButtonThemed btnDel = new GuiButtonThemed(3, px + width - 20, 0, 20, 20, "x");
 			btnDel.packedFGColour = Color.RED.getRGB();
 			btnList.add(btnDel);
 		}
-		if(allowEdit) {
-			n = 40;
-			GuiButtonThemed btnAdd = new GuiButtonThemed(2, px + width - n, 0, 20, 20, "+");
-			btnAdd.packedFGColour = Color.GREEN.getRGB();
-			btnList.add(btnAdd);
-		}
+		GuiButtonThemed btnAdd = new GuiButtonThemed(2, px + width - n, 0, 20, 20, "+");
+		btnAdd.packedFGColour = Color.GREEN.getRGB();
+		btnList.add(btnAdd);
 		GuiButtonThemed btnMain;
 		if(je == null) {
 			return;
@@ -140,16 +121,10 @@ public class ScrollingJsonEntry extends GuiElement implements IScrollingEntry {
 	}
 
 	@Override
-	public void drawForeground(int mx, int my, int px, int py, int width) {
-		if(mx >= px && mx < px + width / 3 && my >= py && my < py + 20 && desc != null && desc.length() > 0) {
-			List<String> tTip = new ArrayList<>();
-			tTip.add(desc);
-			this.drawTooltip(tTip, mx, my, mc.fontRendererObj);
-		}
-	}
+	public void drawForeground(int mx, int my) {}
 
 	@Override
-	public void onMouseClick(int mx, int my, int px, int py, int click, int index) {
+	public void onMouseClick(int mx, int my, int click) {
 		if(txtMain != null) {
 			txtMain.mouseClicked(mx, my, click);
 		}
@@ -183,10 +158,9 @@ public class ScrollingJsonEntry extends GuiElement implements IScrollingEntry {
 			}
 		} else if(je != null && je.isJsonObject()) {
 			JsonObject jo = je.getAsJsonObject();
-			IJsonDoc childDoc = jDoc == null ? null : jDoc.getChildDoc(key);
 			if(btn.id == 0) {
 				if(!(JsonHelper.isItem(jo) || JsonHelper.isFluid(jo) || JsonHelper.isEntity(jo))) {
-					mc.displayGuiScreen(new GuiJsonEditor(mc.currentScreen, jo, childDoc));
+					mc.displayGuiScreen(new GuiJsonEditor(mc.currentScreen, jo));
 				} else if(JsonHelper.isItem(jo)) {
 					mc.displayGuiScreen(new GuiJsonItemSelection(mc.currentScreen, new JsonItemCallback(jo), JsonHelper.JsonToItemStack(jo)));
 				} else if(JsonHelper.isFluid(jo)) {
@@ -198,7 +172,7 @@ public class ScrollingJsonEntry extends GuiElement implements IScrollingEntry {
 				mc.displayGuiScreen(new GuiJsonTypeMenu(mc.currentScreen, jo));
 			}
 		} else if(je != null && je.isJsonArray()) {
-			mc.displayGuiScreen(new GuiJsonEditor(mc.currentScreen, je.getAsJsonArray(), jDoc));
+			mc.displayGuiScreen(new GuiJsonEditor(mc.currentScreen, je.getAsJsonArray()));
 		} else if(je != null && je.isJsonPrimitive() && je.getAsJsonPrimitive().isBoolean()) {
 			if(json.isJsonObject()) {
 				json.getAsJsonObject().addProperty(key, !je.getAsBoolean());

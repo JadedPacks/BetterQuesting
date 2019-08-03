@@ -91,7 +91,7 @@ public class GuiJsonEntitySelection extends GuiScreenThemed {
 	public void drawScreen(int mx, int my, float partialTick) {
 		this.updateSearch();
 		super.drawScreen(mx, my, partialTick);
-		this.searchField.drawTextBox(mx, my, partialTick);
+		this.searchField.drawTextBox(mx, my);
 		if(entity != null) {
 			GL11.glPushMatrix();
 			GL11.glColor4f(1F, 1F, 1F, 1F);
@@ -104,7 +104,7 @@ public class GuiJsonEntitySelection extends GuiScreenThemed {
 				scale = (this.sizeX / 4F) / entity.width;
 			}
 			try {
-				RenderUtils.RenderEntity(this.guiLeft + this.sizeX / 4, this.guiTop + this.sizeY / 2 + MathHelper.ceiling_float_int(entity.height / 2F * scale), (int) scale, angle, 0F, entity);
+				RenderUtils.RenderEntity(this.guiLeft + this.sizeX / 4, this.guiTop + this.sizeY / 2 + MathHelper.ceiling_float_int(entity.height / 2F * scale), (int) scale, angle, entity);
 			} catch(Exception ignored) {}
 			GL11.glPopMatrix();
 		}

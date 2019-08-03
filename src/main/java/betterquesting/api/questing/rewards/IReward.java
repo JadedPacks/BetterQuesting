@@ -1,9 +1,8 @@
 package betterquesting.api.questing.rewards;
 
 import betterquesting.api.client.gui.misc.IGuiEmbedded;
-import betterquesting.api.jdoc.IJsonDoc;
-import betterquesting.api.misc.IJsonSaveLoad;
-import betterquesting.api.questing.IQuest;
+import betterquesting.api.enums.EnumSaveType;
+import betterquesting.questing.QuestInstance;
 import com.google.gson.JsonObject;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -13,15 +12,17 @@ import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
 
-public interface IReward extends IJsonSaveLoad<JsonObject> {
+public interface IReward {
 	String getUnlocalisedName();
 	ResourceLocation getFactoryID();
-	boolean canClaim(EntityPlayer player, IQuest quest);
-	void claimReward(EntityPlayer player, IQuest quest);
-	IJsonDoc getDocumentation();
+	boolean canClaim(EntityPlayer player, QuestInstance quest);
+	void claimReward(EntityPlayer player, QuestInstance quest);
 	@SideOnly(Side.CLIENT)
-	IGuiEmbedded getRewardGui(int x, int y, int w, int h, IQuest quest);
+	IGuiEmbedded getRewardGui(int x, int y, int w, int h, QuestInstance quest);
 	@Nullable
 	@SideOnly(Side.CLIENT)
-	GuiScreen getRewardEditor(GuiScreen parent, IQuest quest);
+	GuiScreen getRewardEditor(GuiScreen parent, QuestInstance quest);
+	// IJsonSaveLoad
+	JsonObject writeToJson(JsonObject json, EnumSaveType saveType);
+	void readFromJson(JsonObject json, EnumSaveType saveType);
 }

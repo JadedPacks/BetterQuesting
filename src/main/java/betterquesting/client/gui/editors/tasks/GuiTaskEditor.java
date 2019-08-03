@@ -9,13 +9,13 @@ import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.misc.IFactory;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.IQuest;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestDatabase;
+import betterquesting.questing.QuestInstance;
 import betterquesting.questing.tasks.TaskRegistry;
 import com.google.gson.JsonObject;
 import com.mojang.realmsclient.gui.ChatFormatting;
@@ -33,20 +33,20 @@ import java.util.List;
 public class GuiTaskEditor extends GuiScreenThemed implements IVolatileScreen, INeedsRefresh {
 	private List<IFactory<? extends ITask>> taskTypes = new ArrayList<>();
 	private List<Integer> taskIDs = new ArrayList<>();
-	private IQuest quest;
+	private QuestInstance quest;
 	private final int qId;
 	private GuiScrollingButtons btnsLeft, btnsRight;
 
-	public GuiTaskEditor(GuiScreen parent, IQuest quest) {
-		super(parent, I18n.format("betterquesting.title.edit_tasks", I18n.format(quest.getUnlocalisedName())));
+	public GuiTaskEditor(GuiScreen parent, QuestInstance quest) {
+		super(parent, I18n.format("betterquesting.title.edit_tasks", I18n.format(quest.name)));
 		this.quest = quest;
-		this.qId = QuestDatabase.INSTANCE.getKey(quest);
+		this.qId = QuestDatabase.getKey(quest);
 	}
 
 	@Override
 	public void initGui() {
 		super.initGui();
-		taskTypes = TaskRegistry.INSTANCE.getAll();
+		taskTypes = new ArrayList<>(TaskRegistry.INSTANCE.taskRegistry.values());
 		taskIDs = quest.getTasks().getAllKeys();
 		btnsLeft = new GuiScrollingButtons(mc, guiLeft + 16, guiTop + 32, sizeX / 2 - 24, sizeY - 64);
 		btnsRight = new GuiScrollingButtons(mc, guiLeft + sizeX / 2 + 8, guiTop + 32, sizeX / 2 - 24, sizeY - 64);
@@ -57,7 +57,7 @@ public class GuiTaskEditor extends GuiScreenThemed implements IVolatileScreen, I
 
 	@Override
 	public void refreshGui() {
-		IQuest tmp = QuestDatabase.INSTANCE.getValue(qId);
+		QuestInstance tmp = QuestDatabase.getValue(qId);
 		if(tmp == null) {
 			mc.displayGuiScreen(parent);
 			return;
@@ -86,8 +86,6 @@ public class GuiTaskEditor extends GuiScreenThemed implements IVolatileScreen, I
 			GuiScreen editor = task.getTaskEditor(this, quest);
 			if(editor != null) {
 				mc.displayGuiScreen(editor);
-			} else {
-				mc.displayGuiScreen(new GuiTaskEditDefault(this, quest, task));
 			}
 		} else if(column == 1) {
 			quest.getTasks().removeKey(id);
@@ -124,10 +122,10 @@ public class GuiTaskEditor extends GuiScreenThemed implements IVolatileScreen, I
 		base.add("config", quest.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
 		base.add("progress", quest.writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
 		NBTTagCompound tags = new NBTTagCompound();
-		tags.setInteger("action", EnumPacketAction.EDIT.ordinal()); // Action: Update data
-		tags.setInteger("questID", QuestDatabase.INSTANCE.getKey(quest));
+		tags.setInteger("action", EnumPacketAction.EDIT.ordinal());
+		tags.setInteger("questID", QuestDatabase.getKey(quest));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
-		PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tags));
+		PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tags));
 	}
 
 	public void RefreshColumns() {

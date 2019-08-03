@@ -1,18 +1,19 @@
 package betterquesting.client.gui.party;
 
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.client.gui.GuiScreenThemed;
 import betterquesting.api.client.gui.controls.GuiButtonThemed;
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.party.IParty;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.client.themes.ThemeStandard;
 import betterquesting.core.BetterQuesting;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
+import betterquesting.questing.party.PartyInstance;
 import betterquesting.questing.party.PartyManager;
 import betterquesting.storage.LifeDatabase;
+import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 import net.minecraft.client.gui.GuiButton;
 import net.minecraft.client.gui.GuiScreen;
@@ -30,7 +31,7 @@ import java.util.UUID;
 public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 	ItemStack heart;
 	int lives = 1, rightScroll = 0, maxRows = 0;
-	final List<IParty> invites = new ArrayList<>();
+	final List<PartyInstance> invites = new ArrayList<>();
 	GuiTextField fieldName;
 	GuiButton btnCreate;
 
@@ -41,17 +42,17 @@ public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 	@Override
 	public void initGui() {
 		super.initGui();
-		UUID playerID = QuestingAPI.getQuestingUUID(mc.thePlayer);
-		IParty party = PartyManager.INSTANCE.getUserParty(playerID);
+		UUID playerID = NameCache.getQuestingUUID(mc.thePlayer);
+		PartyInstance party = PartyManager.getUserParty(playerID);
 		if(party != null) {
 			mc.displayGuiScreen(new GuiManageParty(parent, party));
 			return;
 		}
 		heart = new ItemStack(BetterQuesting.extraLife);
-		lives = LifeDatabase.INSTANCE.getLives(playerID);
+		lives = LifeDatabase.getLives(playerID);
 		invites.clear();
-		for(int i : PartyManager.INSTANCE.getPartyInvites(playerID)) {
-			invites.add(PartyManager.INSTANCE.getValue(i));
+		for(int i : PartyManager.getPartyInvites(playerID)) {
+			invites.add(PartyManager.getValue(i));
 		}
 		rightScroll = 0;
 		maxRows = (sizeY - 72) / 20;
@@ -74,11 +75,11 @@ public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 	@Override
 	public void drawScreen(int mx, int my, float partialTick) {
 		super.drawScreen(mx, my, partialTick);
-		if(QuestSettings.INSTANCE.canUserEdit(mc.thePlayer)) {
+		if(QuestSettings.canUserEdit(mc.thePlayer)) {
 			RenderUtils.RenderItemStack(mc, heart, guiLeft + 16, guiTop + sizeY - 32, "");
 			mc.fontRendererObj.drawString("x " + lives, guiLeft + 36, guiTop + sizeY - 28, getTextColor());
 		}
-		mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+		mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 		this.drawTexturedModalRect(guiLeft + sizeX - 24, this.guiTop + 48, 248, 0, 8, 20);
 		int s = 20;
 		while(s < (maxRows - 1) * 20) {
@@ -92,11 +93,11 @@ public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 		int dotL = mc.fontRendererObj.getStringWidth("...");
 		for(int i = 0; i < invites.size(); i++) {
 			int n = i + rightScroll;
-			IParty party = invites.get(i);
+			PartyInstance party = invites.get(i);
 			if(n < 0 || n >= invites.size() || i >= maxRows) {
 				continue;
 			}
-			String name = party.getName();
+			String name = party.name;
 			if(mc.fontRendererObj.getStringWidth(name) > sizeX / 2 - 32 - 58) {
 				name = mc.fontRendererObj.trimStringToWidth(name, sizeX / 2 - 32 - 58 - dotL) + "...";
 			}
@@ -114,7 +115,7 @@ public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 			NBTTagCompound tags = new NBTTagCompound();
 			tags.setInteger("action", EnumPacketAction.ADD.ordinal());
 			tags.setString("Party", fieldName.getText());
-			PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
+			PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
 		} else if(button.id > 1) {
 			int n1 = button.id - 2,
 				n2 = n1 / maxRows,
@@ -123,8 +124,8 @@ public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 				if(n3 >= 0 && n3 < invites.size()) {
 					NBTTagCompound tags = new NBTTagCompound();
 					tags.setInteger("action", EnumPacketAction.JOIN.ordinal());
-					tags.setInteger("partyID", PartyManager.INSTANCE.getKey(invites.get(n3)));
-					PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
+					tags.setInteger("partyID", PartyManager.getKey(invites.get(n3)));
+					PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
 				}
 			}
 		}

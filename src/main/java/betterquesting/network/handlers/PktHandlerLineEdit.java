@@ -1,10 +1,8 @@
 package betterquesting.network.handlers;
 
-import betterquesting.api.api.QuestingAPI;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.IPacketHandler;
-import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.core.BetterQuesting;
@@ -12,6 +10,7 @@ import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.QuestLine;
 import betterquesting.questing.QuestLineDatabase;
+import betterquesting.storage.NameCache;
 import com.google.gson.JsonObject;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
@@ -33,39 +32,39 @@ public class PktHandlerLineEdit implements IPacketHandler {
 		}
 		boolean isOP = MinecraftServer.getServer().getConfigurationManager().canSendCommands(sender.getGameProfile());
 		if(!isOP) {
-			BetterQuesting.logger.warn("Player " + sender.getCommandSenderName() + " (UUID:" + QuestingAPI.getQuestingUUID(sender) + ") tried to edit quest lines without OP permissions!");
+			BetterQuesting.logger.warn("Player " + sender.getCommandSenderName() + " (UUID:" + NameCache.getQuestingUUID(sender) + ") tried to edit quest lines without OP permissions!");
 			sender.addChatComponentMessage(new ChatComponentText(EnumChatFormatting.RED + "You need to be OP to edit quests!"));
 			return;
 		}
 		int aID = !data.hasKey("action") ? -1 : data.getInteger("action");
 		int lID = !data.hasKey("lineID") ? -1 : data.getInteger("lineID");
 		int idx = !data.hasKey("order") ? -1 : data.getInteger("order");
-		IQuestLine questLine = QuestLineDatabase.INSTANCE.getValue(lID);
+		QuestLine questLine = QuestLineDatabase.getValue(lID);
 		if(aID < 0 || aID >= EnumPacketAction.values().length) {
 			return;
 		}
 		EnumPacketAction action = EnumPacketAction.values()[aID];
 		if(action == EnumPacketAction.ADD) {
-			IQuestLine nq = new QuestLine();
-			int nID = QuestLineDatabase.INSTANCE.nextKey();
+			QuestLine nq = new QuestLine();
+			int nID = QuestLineDatabase.nextKey();
 			if(data.hasKey("data") && lID >= 0) {
 				nID = lID;
 				JsonObject base = NBTConverter.NBTtoJSON_Compound(data.getCompoundTag("data"), new JsonObject());
 				nq.readFromJson(JsonHelper.GetObject(base, "line"), EnumSaveType.CONFIG);
 			}
-			QuestLineDatabase.INSTANCE.add(nq, nID);
-			PacketSender.INSTANCE.sendToAll(nq.getSyncPacket());
+			QuestLineDatabase.add(nq, nID);
+			PacketSender.sendToAll(nq.getSyncPacket());
 		} else if(action == EnumPacketAction.EDIT && questLine != null) {
 			questLine.readPacket(data);
-			if(idx >= 0 && QuestLineDatabase.INSTANCE.getOrderIndex(lID) != idx) {
-				QuestLineDatabase.INSTANCE.setOrderIndex(lID, idx);
-				PacketSender.INSTANCE.sendToAll(QuestLineDatabase.INSTANCE.getSyncPacket());
+			if(idx >= 0 && QuestLineDatabase.getOrderIndex(lID) != idx) {
+				QuestLineDatabase.setOrderIndex(lID, idx);
+				PacketSender.sendToAll(QuestLineDatabase.getSyncPacket());
 			} else {
-				PacketSender.INSTANCE.sendToAll(questLine.getSyncPacket());
+				PacketSender.sendToAll(questLine.getSyncPacket());
 			}
 		} else if(action == EnumPacketAction.REMOVE && questLine != null) {
-			QuestLineDatabase.INSTANCE.removeKey(lID);
-			PacketSender.INSTANCE.sendToAll(QuestLineDatabase.INSTANCE.getSyncPacket());
+			QuestLineDatabase.removeKey(lID);
+			PacketSender.sendToAll(QuestLineDatabase.getSyncPacket());
 		}
 	}
 

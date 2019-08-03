@@ -8,6 +8,7 @@ import betterquesting.api.misc.ICallback;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.client.gui.editors.json.scrolling.GuiScrollingItemGrid;
+import betterquesting.client.themes.ThemeStandard;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import net.minecraft.client.gui.GuiButton;
@@ -73,7 +74,7 @@ public class GuiJsonItemSelection extends GuiScreenThemed {
 		GL11.glColor4f(1f, 1f, 1f, 1f);
 		this.fontRendererObj.drawString(I18n.format("betterquesting.gui.selection"), guiLeft + 24, guiTop + 36, getTextColor(), false);
 		this.fontRendererObj.drawString("x", guiLeft + 65, guiTop + 52, getTextColor(), false);
-		this.mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+		this.mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 		GL11.glPushMatrix();
 		GL11.glScalef(2F, 2F, 1F);
 		GL11.glColor4f(1F, 1F, 1F, 1F);
@@ -102,7 +103,7 @@ public class GuiJsonItemSelection extends GuiScreenThemed {
 			for(int i = 0; i < invoStacks.length && i < 9 * 4; i++) {
 				int x = i % 9 * 18;
 				int y = (i - i % 9) / 9 * 18;
-				this.mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+				this.mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 				GL11.glColor4f(1F, 1F, 1F, 1F);
 				GL11.glDisable(GL11.GL_DEPTH_TEST);
 				this.drawTexturedModalRect(x, y, 0, 48, 18, 18);
@@ -118,7 +119,7 @@ public class GuiJsonItemSelection extends GuiScreenThemed {
 			GL11.glPopMatrix();
 		}
 		RenderUtils.DrawLine(width / 2, guiTop + 32, width / 2, guiTop + sizeY - 32, 2F, getTextColor());
-		this.searchBox.drawTextBox(mx, my, partialTick);
+		this.searchBox.drawTextBox(mx, my);
 		this.numberBox.drawTextBox();
 	}
 

@@ -27,7 +27,7 @@ public class GuiScrollingText extends GuiScrollingBase<GuiScrollingText.Scrollin
 		this.rawText = txt.replaceAll("\r", "");
 		if(this.getEntryList().size() != 1) {
 			this.getEntryList().clear();
-			this.getEntryList().add(new ScrollingEntryText(fontRenderer, rawText, getListWidth()));
+			this.getEntryList().add(new ScrollingEntryText(fontRenderer, rawText));
 		} else {
 			this.getEntryList().get(0).setText(rawText);
 		}
@@ -52,7 +52,7 @@ public class GuiScrollingText extends GuiScrollingBase<GuiScrollingText.Scrollin
 		private int lx = 0;
 		private int ly = 0;
 
-		public ScrollingEntryText(FontRenderer font, String text, int width) {
+		public ScrollingEntryText(FontRenderer font, String text) {
 			this.font = font;
 			this.setText(text);
 		}
@@ -72,10 +72,10 @@ public class GuiScrollingText extends GuiScrollingBase<GuiScrollingText.Scrollin
 		}
 
 		@Override
-		public void drawForeground(int mx, int my, int px, int py, int width) {}
+		public void drawForeground(int mx, int my) {}
 
 		@Override
-		public void onMouseClick(int mx, int my, int px, int py, int click, int index) {}
+		public void onMouseClick(int mx, int my, int click) {}
 
 		public int getCursorPos(int mx, int my) {
 			List<String> tLines = RenderUtils.splitStringWithoutFormat(text, lw, font);

@@ -5,14 +5,13 @@ import betterquesting.api.client.gui.QuestLineButtonTree;
 import betterquesting.api.client.gui.controls.GuiButtonQuestInstance;
 import betterquesting.api.client.gui.misc.IGuiQuestLine;
 import betterquesting.api.client.toolbox.IToolboxTool;
-import betterquesting.api.properties.NativeProps;
-import betterquesting.api.questing.IQuest;
-import betterquesting.api.questing.IQuestLine;
 import betterquesting.api.utils.RenderUtils;
+import betterquesting.client.themes.ThemeStandard;
+import betterquesting.questing.QuestInstance;
+import betterquesting.questing.QuestLine;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.MathHelper;
-import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
@@ -29,15 +28,13 @@ public class GuiQuestLinesEmbedded extends GuiElement implements IGuiQuestLine {
 	private int scrollY = 0;
 	private int maxX = 0;
 	private int maxY = 0;
-	private int bgSize = 1024;
 	private int lastMX = 0;
 	private int lastMY = 0;
 	private boolean noScroll = false;
 	private IToolboxTool curTool = null;
-	private IQuestLine qLine;
+	private QuestLine qLine;
 	private final List<GuiButtonQuestInstance> qBtns = new ArrayList<>();
 	private QuestLineButtonTree buttonTree = null;
-	private ResourceLocation bgImg = null;
 	List<String> curTooltip = null;
 
 	public GuiQuestLinesEmbedded(int posX, int posY, int sizeX, int sizeY) {
@@ -45,16 +42,6 @@ public class GuiQuestLinesEmbedded extends GuiElement implements IGuiQuestLine {
 		this.posY = posY;
 		this.sizeX = sizeX;
 		this.sizeY = sizeY;
-	}
-
-	@Override
-	public void setBackground(ResourceLocation image, int size) {
-		this.bgImg = image;
-		this.bgSize = Math.max(1, size);
-		if(bgImg != null) {
-			this.maxX = Math.max(bgSize, maxX);
-			this.maxY = Math.max(bgSize, maxY);
-		}
 	}
 
 	@Override
@@ -93,27 +80,20 @@ public class GuiQuestLinesEmbedded extends GuiElement implements IGuiQuestLine {
 		float zs = zoom / 100F;
 		int rmx = getRelativeX(mx);
 		int rmy = getRelativeY(my);
-		mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+		mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 		GL11.glColor4f(1F, 1F, 1F, 1F);
 		GL11.glPushMatrix();
 		GL11.glScaled(scaleX, scaleY, 1F);
 		GL11.glTranslated(posX / scaleX, posY / scaleY, 0);
 		drawTexturedModalRect(0, 0, 0, 128, 128, 128);
 		GL11.glPopMatrix();
-		IQuest qTooltip = null;
+		QuestInstance qTooltip = null;
 		if(qLine != null) {
 			GL11.glPushMatrix();
 			GL11.glEnable(GL11.GL_SCISSOR_TEST);
 			RenderUtils.guiScissor(mc, posX, posY, sizeX, sizeY);
 			GL11.glTranslatef(posX + (scrollX) * zs, posY + (scrollY) * zs, 0);
 			GL11.glScalef(zs, zs, 1F);
-			if(bgImg != null) {
-				GL11.glPushMatrix();
-				GL11.glScalef(bgSize / 256F, bgSize / 256F, 1F);
-				mc.renderEngine.bindTexture(bgImg);
-				this.drawTexturedModalRect(0, 0, 0, 0, 256, 256);
-				GL11.glPopMatrix();
-			}
 			for(GuiButtonQuestInstance btnQuest : qBtns) {
 				btnQuest.drawButton(mc, rmx, rmy);
 				if(btnQuest.visible && isWithin(rmx, rmy, btnQuest.xPosition, btnQuest.yPosition, btnQuest.width, btnQuest.height) && isWithin(mx, my, posX, posY, sizeX, sizeY)) {
@@ -129,7 +109,7 @@ public class GuiQuestLinesEmbedded extends GuiElement implements IGuiQuestLine {
 			RenderUtils.guiScissor(mc, posX, posY, sizeX, sizeY);
 			GL11.glTranslatef(posX + (scrollX) * zs, posY + (scrollY) * zs, 0);
 			GL11.glScalef(zs, zs, 1F);
-			curTool.drawTool(rmx, rmy, partialTick);
+			curTool.drawTool(rmx, rmy);
 			GL11.glDisable(GL11.GL_SCISSOR_TEST);
 			GL11.glPopMatrix();
 		}
@@ -147,7 +127,7 @@ public class GuiQuestLinesEmbedded extends GuiElement implements IGuiQuestLine {
 			GL11.glPushMatrix();
 			float scale = sizeX > 600 ? 1.5F : 1F;
 			GL11.glScalef(scale, scale, scale);
-			drawString(mc.fontRendererObj, I18n.format(qLine.getUnlocalisedName()), MathHelper.ceiling_float_int((posX + 4) / scale), MathHelper.ceiling_float_int((posY + 4) / scale), getTextColor(), false);
+			drawString(mc.fontRendererObj, I18n.format(qLine.name), MathHelper.ceiling_float_int((posX + 4) / scale), MathHelper.ceiling_float_int((posY + 4) / scale), getTextColor(), false);
 			drawString(mc.fontRendererObj, zoom + "%", MathHelper.ceiling_float_int((posX + 4) / scale), MathHelper.ceiling_float_int((posY + sizeY - 4 - mc.fontRendererObj.FONT_HEIGHT) / scale), getTextColor(), false);
 			GL11.glPopMatrix();
 		}
@@ -174,26 +154,13 @@ public class GuiQuestLinesEmbedded extends GuiElement implements IGuiQuestLine {
 	@Override
 	public void onMouseScroll(int mx, int my, int SDX) {
 		if(SDX != 0 && isWithin(mx, my, posX, posY, sizeX, sizeY)) {
-			if(curTool != null) {
-				curTool.onMouseScroll(getRelativeX(mx), getRelativeY(my), SDX);
-				if(!curTool.allowZoom()) {
-					return;
-				}
-			}
 			setZoom(zoom - SDX * 5);
-		}
-	}
-
-	@Override
-	public void onKeyTyped(char c, int key) {
-		if(curTool != null) {
-			curTool.onKeyPressed(c, key);
 		}
 	}
 
 	private void setZoom(int value) {
 		zoom = MathHelper.clamp_int(value, 50, 200);
-		if(curTool == null || !curTool.allowZoom()) {
+		if(curTool == null) {
 			clampScroll();
 		}
 	}
@@ -209,23 +176,12 @@ public class GuiQuestLinesEmbedded extends GuiElement implements IGuiQuestLine {
 		if(tree == null) {
 			this.qLine = null;
 			this.qBtns.clear();
-			this.setBackground(null, 256);
 		} else {
 			this.qLine = tree.getQuestLine();
 			this.qBtns.clear();
 			this.qBtns.addAll(tree.getButtonTree());
-			String bgn = tree.getQuestLine().getProperties().getProperty(NativeProps.BG_IMAGE, "");
-			int bgs = tree.getQuestLine().getProperties().getProperty(NativeProps.BG_SIZE, 256).intValue();
-			if(bgn.length() > 0) {
-				setBackground(new ResourceLocation(bgn), bgs);
-			}
-			if(bgImg == null) {
-				maxX = tree.getWidth();
-				maxY = tree.getHeight();
-			} else {
-				maxX = Math.max(bgSize, tree.getWidth());
-				maxY = Math.max(bgSize, tree.getHeight());
-			}
+			maxX = tree.getWidth();
+			maxY = tree.getHeight();
 			if(resetView) {
 				zoom = 100;
 				scrollX = Math.abs(sizeX - maxX) / 2;

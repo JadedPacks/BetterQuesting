@@ -51,7 +51,7 @@ public class GuiScrollingButtons extends GuiScrollingBase<GuiScrollingButtons.Sc
 		}
 
 		@Override
-		public void drawForeground(int mx, int my, int px, int py, int width) {
+		public void drawForeground(int mx, int my) {
 			for(GuiButtonThemed btn : buttons) {
 				if(!isWithin(mx, my, btn.xPosition, btn.yPosition, btn.width, btn.height)) {
 					continue;
@@ -65,7 +65,7 @@ public class GuiScrollingButtons extends GuiScrollingBase<GuiScrollingButtons.Sc
 		}
 
 		@Override
-		public void onMouseClick(int mx, int my, int px, int py, int click, int index) {}
+		public void onMouseClick(int mx, int my, int click) {}
 
 		@Override
 		public int getHeight() {

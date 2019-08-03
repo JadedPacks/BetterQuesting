@@ -6,9 +6,10 @@ import betterquesting.api.client.gui.controls.GuiButtonThemed;
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.party.IParty;
+import betterquesting.client.themes.ThemeStandard;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
+import betterquesting.questing.party.PartyInstance;
 import betterquesting.questing.party.PartyManager;
 import betterquesting.storage.NameCache;
 import net.minecraft.client.gui.GuiButton;
@@ -25,16 +26,16 @@ import java.util.List;
 
 public class GuiPartyInvite extends GuiScreenThemed implements INeedsRefresh {
 	private final int partyID;
-	private IParty party;
+	private PartyInstance party;
 	private int listScroll = 0, maxRows = 0;
 	private final List<String> playerList = new ArrayList<>();
 	private GuiBigTextField txtManual;
 	private GuiButtonThemed btnManual;
 
-	public GuiPartyInvite(GuiScreen parent, IParty party) {
+	public GuiPartyInvite(GuiScreen parent, PartyInstance party) {
 		super(parent, "betterquesting.title.party_invite");
 		this.party = party;
-		this.partyID = PartyManager.INSTANCE.getKey(party);
+		this.partyID = PartyManager.getKey(party);
 	}
 
 	@Override
@@ -43,7 +44,7 @@ public class GuiPartyInvite extends GuiScreenThemed implements INeedsRefresh {
 		maxRows = (sizeY - 92) / 20;
 		NetHandlerPlayClient nethandlerplayclient = mc.thePlayer.sendQueue;
 		playerList.clear();
-		playerList.addAll(NameCache.INSTANCE.getAllNames());
+		playerList.addAll(NameCache.getAllNames());
 		for(GuiPlayerInfo info : (List<GuiPlayerInfo>) nethandlerplayclient.playerInfoList) {
 			if(!playerList.contains(info.name)) {
 				playerList.add(info.name);
@@ -62,10 +63,10 @@ public class GuiPartyInvite extends GuiScreenThemed implements INeedsRefresh {
 
 	@Override
 	public void refreshGui() {
-		this.party = PartyManager.INSTANCE.getValue(partyID);
+		this.party = PartyManager.getValue(partyID);
 		NetHandlerPlayClient nethandlerplayclient = mc.thePlayer.sendQueue;
 		playerList.clear();
-		playerList.addAll(NameCache.INSTANCE.getAllNames());
+		playerList.addAll(NameCache.getAllNames());
 		for(GuiPlayerInfo info : (List<GuiPlayerInfo>) nethandlerplayclient.playerInfoList) {
 			if(!playerList.contains(info.name)) {
 				playerList.add(info.name);
@@ -78,10 +79,10 @@ public class GuiPartyInvite extends GuiScreenThemed implements INeedsRefresh {
 	public void drawScreen(int mx, int my, float partialTick) {
 		super.drawScreen(mx, my, partialTick);
 		if(txtManual != null) {
-			txtManual.drawTextBox(mx, my, partialTick);
+			txtManual.drawTextBox(mx, my);
 		}
 		GL11.glColor4f(1F, 1F, 1F, 1F);
-		mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+		mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 		this.drawTexturedModalRect(guiLeft + sizeX / 2 + 150, this.guiTop + 68, 248, 0, 8, 20);
 		int s = 20;
 		while(s < (maxRows - 1) * 20) {
@@ -98,9 +99,9 @@ public class GuiPartyInvite extends GuiScreenThemed implements INeedsRefresh {
 		if(button.id == 1 && txtManual.getText().length() > 0) {
 			NBTTagCompound tags = new NBTTagCompound();
 			tags.setInteger("action", EnumPacketAction.INVITE.ordinal());
-			tags.setInteger("partyID", PartyManager.INSTANCE.getKey(party));
+			tags.setInteger("partyID", PartyManager.getKey(party));
 			tags.setString("target", txtManual.getText());
-			PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
+			PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
 		} else if(button.id > 1) {
 			int n1 = button.id - 2,
 				n2 = n1 / (maxRows * 3),
@@ -109,9 +110,9 @@ public class GuiPartyInvite extends GuiScreenThemed implements INeedsRefresh {
 				if(n3 >= 0 && n3 < playerList.size()) {
 					NBTTagCompound tags = new NBTTagCompound();
 					tags.setInteger("action", EnumPacketAction.INVITE.ordinal());
-					tags.setInteger("partyID", PartyManager.INSTANCE.getKey(party));
+					tags.setInteger("partyID", PartyManager.getKey(party));
 					tags.setString("target", button.displayString);
-					PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
+					PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
 				}
 			}
 		}
@@ -154,7 +155,7 @@ public class GuiPartyInvite extends GuiScreenThemed implements INeedsRefresh {
 			if(n2 == 0) {
 				if(n3 >= 0 && n3 < playerList.size()) {
 					btn.visible = true;
-					btn.enabled = party.getStatus(NameCache.INSTANCE.getUUID(playerList.get(n3))) == null;
+					btn.enabled = party.getStatus(NameCache.getUUID(playerList.get(n3))) == null;
 					btn.displayString = playerList.get(n3);
 				} else {
 					btn.visible = true;

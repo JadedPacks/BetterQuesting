@@ -9,17 +9,13 @@ import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
-import betterquesting.api.questing.IQuest;
-import betterquesting.api.questing.IQuestLine;
-import betterquesting.api.questing.IQuestLineEntry;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.RenderUtils;
 import betterquesting.client.gui.GuiQuestInstance;
+import betterquesting.client.themes.ThemeStandard;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
-import betterquesting.questing.QuestDatabase;
-import betterquesting.questing.QuestLineDatabase;
-import betterquesting.questing.QuestLineEntry;
+import betterquesting.questing.*;
 import com.google.gson.JsonObject;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
@@ -36,17 +32,17 @@ import java.util.List;
 @SideOnly(Side.CLIENT)
 public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScreen, INeedsRefresh {
 	private final int lineID;
-	private IQuestLine line;
+	private QuestLine line;
 	private GuiBigTextField searchBox;
 	private final List<Integer> searchResults = new ArrayList<>();
 	private List<Integer> lineQuests = new ArrayList<>();
 	private GuiScrollingButtons dbBtnList,
 		qlBtnList;
 
-	public GuiQuestLineEditorB(GuiScreen parent, IQuestLine line) {
-		super(parent, I18n.format("betterquesting.title.edit_line2", line == null ? "?" : I18n.format(line.getUnlocalisedName())));
+	public GuiQuestLineEditorB(GuiScreen parent, QuestLine line) {
+		super(parent, I18n.format("betterquesting.title.edit_line2", line == null ? "?" : I18n.format(line.name)));
 		this.line = line;
-		this.lineID = QuestLineDatabase.INSTANCE.getKey(line);
+		this.lineID = QuestLineDatabase.getKey(line);
 	}
 
 	@Override
@@ -67,12 +63,12 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 
 	@Override
 	public void refreshGui() {
-		this.line = QuestLineDatabase.INSTANCE.getValue(lineID);
+		this.line = QuestLineDatabase.getValue(lineID);
 		if(lineID >= 0 && line == null) {
 			mc.displayGuiScreen(parent);
 			return;
 		}
-		setTitle(I18n.format("betterquesting.title.edit_line2", line == null ? "?" : I18n.format(line.getUnlocalisedName())));
+		setTitle(I18n.format("betterquesting.title.edit_line2", line == null ? "?" : I18n.format(line.name)));
 		RefreshSearch();
 		RefreshColumns();
 	}
@@ -81,14 +77,14 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 	public void drawScreen(int mx, int my, float partialTick) {
 		super.drawScreen(mx, my, partialTick);
 		GL11.glColor4f(1F, 1F, 1F, 1F);
-		mc.renderEngine.bindTexture(currentTheme().getGuiTexture());
+		mc.renderEngine.bindTexture(ThemeStandard.getGuiTexture());
 		RenderUtils.DrawLine(width / 2, guiTop + 32, width / 2, guiTop + sizeY - 32, 2F, getTextColor());
 		int sx = sizeX - 32;
 		String txt = I18n.format("betterquesting.gui.quest_line");
 		mc.fontRendererObj.drawString(txt, guiLeft + 16 + sx / 4 - mc.fontRendererObj.getStringWidth(txt) / 2, guiTop + 32, getTextColor(), false);
 		txt = I18n.format("betterquesting.gui.database");
 		mc.fontRendererObj.drawString(txt, guiLeft + 16 + sx / 4 * 3 - mc.fontRendererObj.getStringWidth(txt) / 2, guiTop + 32, getTextColor(), false);
-		searchBox.drawTextBox(mx, my, partialTick);
+		searchBox.drawTextBox(mx, my);
 	}
 
 	@Override
@@ -101,27 +97,26 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 			int id = (button.id >> 3) - 2;
 			if(column == 0 || column == 3) {
 				if(id >= 0) {
-					IQuest q = QuestDatabase.INSTANCE.getValue(id);
-
+					QuestInstance q = QuestDatabase.getValue(id);
 					if(q != null) {
 						mc.displayGuiScreen(new GuiQuestInstance(this, q));
 					}
 				}
 			} else if(column == 1 && line != null) {
 				line.removeKey(id);
-				SendChanges(EnumPacketAction.EDIT, lineID);
+				SendChanges(EnumPacketAction.EDIT);
 			} else if(column == 4 && id >= 0) {
 				NBTTagCompound tags = new NBTTagCompound();
 				tags.setInteger("action", EnumPacketAction.REMOVE.ordinal());
 				tags.setInteger("questID", id);
-				PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tags));
+				PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tags));
 			} else if(column == 2 && line != null && id >= 0) {
-				IQuestLineEntry qe = new QuestLineEntry(0, 0);
+				QuestLineEntry qe = new QuestLineEntry(0, 0);
 				int x1 = 0;
 				int y1 = 0;
 				topLoop:
 				while(true) {
-					for(IQuestLineEntry qe2 : line.getAllValues()) {
+					for(QuestLineEntry qe2 : line.getAllValues()) {
 						int x2 = qe2.getPosX();
 						int y2 = qe2.getPosY();
 						int s2 = qe2.getSize();
@@ -135,7 +130,7 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 				qe.setPosition(x1, y1);
 				line.add(qe, id);
 				RefreshColumns();
-				SendChanges(EnumPacketAction.EDIT, lineID);
+				SendChanges(EnumPacketAction.EDIT);
 			}
 		}
 	}
@@ -143,10 +138,10 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 	public void createQuest() {
 		NBTTagCompound tag = new NBTTagCompound();
 		tag.setInteger("action", EnumPacketAction.ADD.ordinal());
-		PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag));
+		PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag));
 	}
 
-	public void SendChanges(EnumPacketAction action, int lineID) {
+	public void SendChanges(EnumPacketAction action) {
 		if(action == null) {
 			return;
 		}
@@ -157,8 +152,8 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 			tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		}
 		tags.setInteger("action", action.ordinal());
-		tags.setInteger("lineID", QuestLineDatabase.INSTANCE.getKey(line));
-		PacketSender.INSTANCE.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tags));
+		tags.setInteger("lineID", QuestLineDatabase.getKey(line));
+		PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tags));
 	}
 
 	public void RefreshColumns() {
@@ -169,19 +164,19 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 		}
 		qlBtnList.getEntryList().clear();
 		for(int qID : lineQuests) {
-			IQuest quest = QuestDatabase.INSTANCE.getValue(qID);
+			QuestInstance quest = QuestDatabase.getValue(qID);
 			if(quest == null) {
 				continue;
 			}
 			int bWidth = qlBtnList.getListWidth(),
 				bID = (2 + qID) << 3;
-			GuiButtonThemed btn1 = new GuiButtonThemed(bID, 0, 0, bWidth - 20, 20, I18n.format(quest.getUnlocalisedName()));
+			GuiButtonThemed btn1 = new GuiButtonThemed(bID, 0, 0, bWidth - 20, 20, I18n.format(quest.name));
 			GuiButtonThemed btn2 = new GuiButtonThemed(bID + 1, 0, 0, 20, 20, EnumChatFormatting.YELLOW + ">");
 			qlBtnList.addButtonRow(btn1, btn2);
 		}
 		dbBtnList.getEntryList().clear();
 		for(int qID : searchResults) {
-			IQuest quest = QuestDatabase.INSTANCE.getValue(qID);
+			QuestInstance quest = QuestDatabase.getValue(qID);
 			if(quest == null) {
 				continue;
 			}
@@ -189,7 +184,7 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 			int bID = (2 + qID) << 3;
 			GuiButtonThemed btn3 = new GuiButtonThemed(bID + 2, 0, 0, 20, 20, EnumChatFormatting.GREEN + "<");
 			btn3.enabled = line != null && !lineQuests.contains(qID);
-			GuiButtonThemed btn4 = new GuiButtonThemed(bID + 3, 0, 0, bWidth - 40, 20, I18n.format(quest.getUnlocalisedName()));
+			GuiButtonThemed btn4 = new GuiButtonThemed(bID + 3, 0, 0, bWidth - 40, 20, I18n.format(quest.name));
 			GuiButtonThemed btn5 = new GuiButtonThemed(bID + 4, 0, 0, 20, 20, "" + EnumChatFormatting.BOLD + EnumChatFormatting.RED + "x");
 			dbBtnList.addButtonRow(btn3, btn4, btn5);
 		}
@@ -209,9 +204,9 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 	public void RefreshSearch() {
 		searchResults.clear();
 		String query = searchBox.getText().toLowerCase();
-		for(int id : QuestDatabase.INSTANCE.getAllKeys()) {
-			IQuest q = QuestDatabase.INSTANCE.getValue(id);
-			if(query.length() <= 0 || q.getUnlocalisedName().toLowerCase().contains(query) || I18n.format(q.getUnlocalisedName()).toLowerCase().contains(query) || query.equalsIgnoreCase("" + id)) {
+		for(int id : QuestDatabase.getAllKeys()) {
+			QuestInstance q = QuestDatabase.getValue(id);
+			if(query.length() <= 0 || q.name.toLowerCase().contains(query) || I18n.format(q.name).toLowerCase().contains(query) || query.equalsIgnoreCase("" + id)) {
 				searchResults.add(id);
 			}
 		}
