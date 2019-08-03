@@ -8,7 +8,6 @@ import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.enums.EnumLogic;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumQuestVisibility;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.misc.ICallback;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.NBTConverter;
@@ -47,10 +46,7 @@ public class GuiQuestEditor extends GuiScreenThemed implements ICallback<String>
 		super.initGui();
 		this.setTitle(I18n.format("betterquesting.title.edit_quest", I18n.format(quest.name)));
 		if(lastEdit != null) {
-			JsonObject prog = new JsonObject();
-			quest.writeToJson(prog, EnumSaveType.PROGRESS);
-			quest.readFromJson(lastEdit, EnumSaveType.CONFIG);
-			quest.readFromJson(prog, EnumSaveType.PROGRESS);
+			quest.readFromJson(lastEdit);
 			lastEdit = null;
 			SendChanges();
 		}
@@ -149,8 +145,7 @@ public class GuiQuestEditor extends GuiScreenThemed implements ICallback<String>
 
 	public void SendChanges() {
 		JsonObject base = new JsonObject();
-		base.add("config", quest.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
-		base.add("progress", quest.writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
+		base.add("config", quest.writeToJson(new JsonObject()));
 		NBTTagCompound tags = new NBTTagCompound();
 		tags.setInteger("action", EnumPacketAction.EDIT.ordinal());
 		tags.setInteger("questID", id);

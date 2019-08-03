@@ -2,7 +2,6 @@ package betterquesting.client.toolbox;
 
 import betterquesting.api.client.gui.GuiScreenThemed;
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.misc.ICallback;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.BigItemStack;
@@ -38,8 +37,7 @@ public class GuiToolIconProxy extends GuiScreenThemed implements ICallback<BigIt
 
 	public void SendChanges() {
 		JsonObject base = new JsonObject();
-		base.add("config", quest.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
-		base.add("progress", quest.writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
+		base.add("config", quest.writeToJson(new JsonObject()));
 		NBTTagCompound tags = new NBTTagCompound();
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		tags.setInteger("action", EnumPacketAction.EDIT.ordinal());

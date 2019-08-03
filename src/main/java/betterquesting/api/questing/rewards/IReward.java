@@ -1,7 +1,6 @@
 package betterquesting.api.questing.rewards;
 
 import betterquesting.api.client.gui.misc.IGuiEmbedded;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.questing.QuestInstance;
 import com.google.gson.JsonObject;
 import cpw.mods.fml.relauncher.Side;
@@ -23,6 +22,6 @@ public interface IReward {
 	@SideOnly(Side.CLIENT)
 	GuiScreen getRewardEditor(GuiScreen parent, QuestInstance quest);
 	// IJsonSaveLoad
-	JsonObject writeToJson(JsonObject json, EnumSaveType saveType);
-	void readFromJson(JsonObject json, EnumSaveType saveType);
+	JsonObject writeToJson(JsonObject json);
+	void readFromJson(JsonObject json);
 }

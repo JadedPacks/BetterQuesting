@@ -1,6 +1,5 @@
 package betterquesting.questing;
 
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
@@ -23,9 +22,7 @@ public class QuestLine {
 		for(Entry<Integer, QuestLineEntry> entry : questList.entrySet()) {
 			int i1 = entry.getValue().getPosX();
 			int j1 = entry.getValue().getPosY();
-			int i2 = i1 + entry.getValue().getSize();
-			int j2 = j1 + entry.getValue().getSize();
-			if(x >= i1 && x < i2 && y >= j1 && y < j2) {
+			if(x >= i1 && x < i1 + 24 && y >= j1 && y < j1 + 24) {
 				return entry.getKey();
 			}
 		}
@@ -41,10 +38,6 @@ public class QuestLine {
 
 	public boolean removeKey(Integer questID) {
 		return questList.remove(questID) != null;
-	}
-
-	public boolean removeValue(QuestLineEntry entry) {
-		return removeKey(getKey(entry));
 	}
 
 	public QuestLineEntry getValue(Integer questID) {
@@ -79,7 +72,7 @@ public class QuestLine {
 	public QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject base = new JsonObject();
-		base.add("line", writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+		base.add("line", writeToJson(new JsonObject()));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		tags.setInteger("lineID", QuestLineDatabase.getKey(this));
 		return new QuestingPacket(PacketTypeNative.LINE_SYNC.GetLocation(), tags);
@@ -87,20 +80,17 @@ public class QuestLine {
 
 	public void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
-		readFromJson(JsonHelper.GetObject(base, "line"), EnumSaveType.CONFIG);
+		readFromJson(JsonHelper.GetObject(base, "line"));
 	}
 
-	public JsonObject writeToJson(JsonObject json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return json;
-		}
+	public JsonObject writeToJson(JsonObject json) {
 		JsonObject jObj = new JsonObject();
 		jObj.addProperty("name", name);
 		jObj.addProperty("desc", desc);
 		json.add("properties", jObj);
 		JsonArray jArr = new JsonArray();
 		for(Entry<Integer, QuestLineEntry> entry : questList.entrySet()) {
-			JsonObject qle = entry.getValue().writeToJson(new JsonObject(), saveType);
+			JsonObject qle = entry.getValue().writeToJson(new JsonObject());
 			qle.addProperty("id", entry.getKey());
 			jArr.add(qle);
 		}
@@ -108,10 +98,7 @@ public class QuestLine {
 		return json;
 	}
 
-	public void readFromJson(JsonObject json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return;
-		}
+	public void readFromJson(JsonObject json) {
 		JsonObject jObj = JsonHelper.GetObject(json, "properties");
 		name = JsonHelper.GetString(jObj, "name", "New Quest Line");
 		desc = JsonHelper.GetString(jObj, "desc", "No Description");

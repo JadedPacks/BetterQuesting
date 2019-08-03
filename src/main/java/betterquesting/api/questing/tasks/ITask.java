@@ -1,7 +1,6 @@
 package betterquesting.api.questing.tasks;
 
 import betterquesting.api.client.gui.misc.IGuiEmbedded;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.questing.QuestInstance;
 import com.google.gson.JsonObject;
@@ -29,8 +28,8 @@ public interface ITask {
 	@SideOnly(Side.CLIENT)
 	GuiScreen getTaskEditor(GuiScreen parent, QuestInstance quest);
 	// IJsonSaveLoad
-	JsonObject writeToJson(JsonObject json, EnumSaveType saveType);
-	void readFromJson(JsonObject json, EnumSaveType saveType);
+	JsonObject writeToJson(JsonObject json);
+	void readFromJson(JsonObject json);
 	// IDataSync
 	QuestingPacket getSyncPacket();
 	void readPacket(NBTTagCompound payload);

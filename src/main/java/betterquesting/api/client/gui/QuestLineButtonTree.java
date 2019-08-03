@@ -67,7 +67,7 @@ public class QuestLineButtonTree {
 			QuestInstance quest = QuestDatabase.getValue(id);
 			QuestLineEntry entry = line.getValue(id);
 			if(quest != null && entry != null) {
-				buttonTree.add(new GuiButtonQuestInstance(0, entry.getPosX(), entry.getPosY(), entry.getSize(), entry.getSize(), quest));
+				buttonTree.add(new GuiButtonQuestInstance(0, entry.getPosX(), entry.getPosY(), 24, 24, quest));
 			}
 		}
 		for(GuiButtonQuestInstance btn : buttonTree) {

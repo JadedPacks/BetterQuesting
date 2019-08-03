@@ -3,13 +3,11 @@ package betterquesting.questing;
 import betterquesting.api.enums.*;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.rewards.IReward;
-import betterquesting.api.questing.tasks.IProgression;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.storage.IRegStorageBase;
 import betterquesting.api.utils.BigItemStack;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
-import betterquesting.core.BetterQuesting;
 import betterquesting.misc.UserEntry;
 import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
@@ -268,19 +266,6 @@ public class QuestInstance {
 		}
 	}
 
-	private float GetParticipation(UUID uuid) {
-		if(tasks.size() <= 0) {
-			return 0F;
-		}
-		float total = 0F;
-		for(ITask t : tasks.getAllValues()) {
-			if(t instanceof IProgression) {
-				total += ((IProgression) t).getParticipation(uuid);
-			}
-		}
-		return total / tasks.size();
-	}
-
 	public List<String> getTooltip(EntityPlayer player) {
 		if(Keyboard.isKeyDown(Keyboard.KEY_LSHIFT) || Keyboard.isKeyDown(Keyboard.KEY_RSHIFT)) {
 			return this.getAdvancedTooltip();
@@ -368,8 +353,7 @@ public class QuestInstance {
 	public QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject base = new JsonObject();
-		base.add("config", writeToJson(new JsonObject(), EnumSaveType.CONFIG));
-		base.add("progress", writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
+		base.add("config", writeToJson(new JsonObject()));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		tags.setInteger("questID", QuestDatabase.getKey(this));
 		return new QuestingPacket(PacketTypeNative.QUEST_SYNC.GetLocation(), tags);
@@ -377,8 +361,7 @@ public class QuestInstance {
 
 	public void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
-		readFromJson(JsonHelper.GetObject(base, "config"), EnumSaveType.CONFIG);
-		readFromJson(JsonHelper.GetObject(base, "progress"), EnumSaveType.PROGRESS);
+		readFromJson(JsonHelper.GetObject(base, "config"));
 	}
 
 	public boolean isUnlocked(UUID uuid) {
@@ -498,65 +481,7 @@ public class QuestInstance {
 		return preRequisites;
 	}
 
-	public JsonObject writeToJson(JsonObject json, EnumSaveType saveType) {
-		switch(saveType) {
-			case CONFIG:
-				writeToJson_Config(json);
-				break;
-			case PROGRESS:
-				writeToJson_Progress(json);
-				break;
-			default:
-				break;
-		}
-		return json;
-	}
-
-	public void readFromJson(JsonObject json, EnumSaveType saveType) {
-		switch(saveType) {
-			case CONFIG:
-				readFromJson_Config(json);
-				break;
-			case PROGRESS:
-				readFromJson_Progress(json);
-				break;
-			default:
-				break;
-		}
-	}
-
-	private void writeToJson_Config(JsonObject json) {
-		JsonObject jObj = new JsonObject();
-		jObj.addProperty("name", name);
-		jObj.addProperty("desc", desc);
-		jObj.add("icon", JsonHelper.ItemStackToJson(icon, new JsonObject()));
-		if(logicQuest != EnumLogic.AND) {
-			jObj.add("logicQuest", new JsonPrimitive(logicQuest.toString()));
-		}
-		if(logicTask != EnumLogic.AND) {
-			jObj.add("logicTask", new JsonPrimitive(logicTask.toString()));
-		}
-		if(visibility != EnumQuestVisibility.NORMAL) {
-			jObj.add("visibility", new JsonPrimitive(visibility.toString()));
-		}
-		if(repeat != -1) {
-			jObj.addProperty("repeat", repeat);
-		}
-		json.add("properties", jObj);
-		json.add("tasks", tasks.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-		json.add("rewards", rewards.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-		JsonArray reqJson = new JsonArray();
-		for(QuestInstance quest : preRequisites) {
-			int prID = QuestDatabase.getKey(quest);
-
-			if(prID >= 0) {
-				reqJson.add(new JsonPrimitive(prID));
-			}
-		}
-		json.add("preRequisites", reqJson);
-	}
-
-	private void readFromJson_Config(JsonObject json) {
+	public void readFromJson(JsonObject json) {
 		JsonObject jObj = JsonHelper.GetObject(json, "properties");
 		name = JsonHelper.GetString(jObj, "name", "New Quest");
 		desc = JsonHelper.GetString(jObj, "desc", "No Description");
@@ -565,8 +490,8 @@ public class QuestInstance {
 		logicQuest = JsonHelper.GetEnum(jObj, "logicQuest", EnumLogic.AND);
 		logicTask = JsonHelper.GetEnum(jObj, "logicTask", EnumLogic.AND);
 		visibility = JsonHelper.GetEnum(jObj, "visibility", EnumQuestVisibility.NORMAL);
-		this.tasks.readFromJson(JsonHelper.GetArray(json, "tasks"), EnumSaveType.CONFIG);
-		this.rewards.readFromJson(JsonHelper.GetArray(json, "rewards"), EnumSaveType.CONFIG);
+		this.tasks.readFromJson(JsonHelper.GetArray(json, "tasks"));
+		this.rewards.readFromJson(JsonHelper.GetArray(json, "rewards"));
 		preRequisites.clear();
 		for(JsonElement entry : JsonHelper.GetArray(json, "preRequisites")) {
 			if(entry == null || !entry.isJsonPrimitive() || !entry.getAsJsonPrimitive().isNumber()) {
@@ -585,31 +510,35 @@ public class QuestInstance {
 		}
 	}
 
-	private void writeToJson_Progress(JsonObject json) {
-		JsonArray comJson = new JsonArray();
-		for(UserEntry entry : completeUsers) {
-			comJson.add(entry.writeToJson(new JsonObject()));
+	public JsonObject writeToJson(JsonObject json) {
+		JsonObject jObj = new JsonObject();
+		jObj.addProperty("name", name);
+		jObj.addProperty("desc", desc);
+		jObj.add("icon", JsonHelper.ItemStackToJson(icon, new JsonObject()));
+		if(logicQuest != EnumLogic.AND) {
+			jObj.add("logicQuest", new JsonPrimitive(logicQuest.toString()));
 		}
-		json.add("completed", comJson);
-		JsonArray tskJson = tasks.writeToJson(new JsonArray(), EnumSaveType.PROGRESS);
-		json.add("tasks", tskJson);
-	}
+		if(logicTask != EnumLogic.AND) {
+			jObj.add("logicTask", new JsonPrimitive(logicTask.toString()));
+		}
+		if(visibility != EnumQuestVisibility.NORMAL) {
+			jObj.add("visibility", new JsonPrimitive(visibility.toString()));
+		}
+		if(repeat != -1) {
+			jObj.addProperty("repeat", repeat);
+		}
+		json.add("properties", jObj);
+		json.add("tasks", tasks.writeToJson(new JsonArray()));
+		json.add("rewards", rewards.writeToJson(new JsonArray()));
+		JsonArray reqJson = new JsonArray();
+		for(QuestInstance quest : preRequisites) {
+			int prID = QuestDatabase.getKey(quest);
 
-	private void readFromJson_Progress(JsonObject json) {
-		completeUsers.clear();
-		for(JsonElement entry : JsonHelper.GetArray(json, "completed")) {
-			if(entry == null || !entry.isJsonObject()) {
-				continue;
-			}
-			try {
-				UUID uuid = UUID.fromString(JsonHelper.GetString(entry.getAsJsonObject(), "uuid", ""));
-				UserEntry user = new UserEntry(uuid);
-				user.readFromJson(entry.getAsJsonObject());
-				completeUsers.add(user);
-			} catch(Exception e) {
-				BetterQuesting.logger.error("Unable to load UUID for quest", e);
+			if(prID >= 0) {
+				reqJson.add(new JsonPrimitive(prID));
 			}
 		}
-		tasks.readFromJson(JsonHelper.GetArray(json, "tasks"), EnumSaveType.PROGRESS);
+		json.add("preRequisites", reqJson);
+		return json;
 	}
 }

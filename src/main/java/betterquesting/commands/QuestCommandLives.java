@@ -1,8 +1,7 @@
 package betterquesting.commands;
 
-import betterquesting.network.PacketSender;
-import betterquesting.storage.LifeDatabase;
 import betterquesting.storage.NameCache;
+import betterquesting.storage.PlayerInstance;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.entity.player.EntityPlayer;
@@ -60,20 +59,19 @@ public class QuestCommandLives extends QuestCommandBase {
 		if(action.equalsIgnoreCase("set")) {
 			value = Math.max(1, value);
 			if(playerID != null) {
-				LifeDatabase.setLives(playerID, value);
+				NameCache.getInstance(playerID).lives = value;
 				sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.lives.set_player", pName, value));
 			} else {
 				for(Object p : MinecraftServer.getServer().getConfigurationManager().playerEntityList) {
-					LifeDatabase.setLives(NameCache.getQuestingUUID((EntityPlayer) p), value);
+					NameCache.getInstance(NameCache.getQuestingUUID((EntityPlayer) p)).lives = value;
 				}
 				sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.lives.set_all", value));
 			}
-			PacketSender.sendToAll(LifeDatabase.getSyncPacket());
 		} else if(action.equalsIgnoreCase("add")) {
 			if(playerID != null) {
-				int lives = LifeDatabase.getLives(playerID);
-				LifeDatabase.setLives(playerID, lives + value);
-				lives = LifeDatabase.getLives(playerID);
+				PlayerInstance pInst = NameCache.getInstance(playerID);
+				int lives = pInst.lives + value;
+				pInst.lives = lives;
 				if(value >= 0) {
 					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.lives.add_player", value, pName, lives));
 				} else {
@@ -81,9 +79,7 @@ public class QuestCommandLives extends QuestCommandBase {
 				}
 			} else {
 				for(Object p : MinecraftServer.getServer().getConfigurationManager().playerEntityList) {
-					EntityPlayer pl = (EntityPlayer) p;
-					int lives = LifeDatabase.getLives(NameCache.getQuestingUUID(pl));
-					LifeDatabase.setLives(NameCache.getQuestingUUID(pl), lives + value);
+					NameCache.getInstance(NameCache.getQuestingUUID((EntityPlayer) p)).lives = value;
 				}
 				if(value >= 0) {
 					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.lives.add_all", value));
@@ -91,7 +87,6 @@ public class QuestCommandLives extends QuestCommandBase {
 					sender.addChatMessage(new ChatComponentTranslation("betterquesting.cmd.lives.remove_all", Math.abs(value)));
 				}
 			}
-			PacketSender.sendToAll(LifeDatabase.getSyncPacket());
 		} else {
 			throw getException(command);
 		}

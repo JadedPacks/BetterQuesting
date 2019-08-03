@@ -6,7 +6,6 @@ import betterquesting.api.client.gui.lists.GuiScrollingButtons;
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.misc.IFactory;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.questing.tasks.ITask;
@@ -119,8 +118,7 @@ public class GuiTaskEditor extends GuiScreenThemed implements IVolatileScreen, I
 
 	public void SendChanges() {
 		JsonObject base = new JsonObject();
-		base.add("config", quest.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
-		base.add("progress", quest.writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
+		base.add("config", quest.writeToJson(new JsonObject()));
 		NBTTagCompound tags = new NBTTagCompound();
 		tags.setInteger("action", EnumPacketAction.EDIT.ordinal());
 		tags.setInteger("questID", QuestDatabase.getKey(quest));

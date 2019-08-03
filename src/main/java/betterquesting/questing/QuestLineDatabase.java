@@ -1,6 +1,5 @@
 package betterquesting.questing;
 
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
@@ -103,26 +102,23 @@ public final class QuestLineDatabase {
 	public static QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject base = new JsonObject();
-		base.add("questLines", writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+		base.add("questLines", writeToJson(new JsonArray()));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		return new QuestingPacket(PacketTypeNative.LINE_DATABASE.GetLocation(), tags);
 	}
 
 	public static void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
-		readFromJson(JsonHelper.GetArray(base, "questLines"), EnumSaveType.CONFIG);
+		readFromJson(JsonHelper.GetArray(base, "questLines"));
 	}
 
-	public static JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return json;
-		}
+	public static JsonArray writeToJson(JsonArray json) {
 		for(Entry<Integer, QuestLine> entry : questLines.entrySet()) {
 			if(entry.getValue() == null) {
 				continue;
 			}
 			int id = entry.getKey();
-			JsonObject jObj = entry.getValue().writeToJson(new JsonObject(), saveType);
+			JsonObject jObj = entry.getValue().writeToJson(new JsonObject());
 			jObj.addProperty("lineID", id);
 			jObj.addProperty("order", getOrderIndex(id));
 			json.add(jObj);
@@ -130,10 +126,7 @@ public final class QuestLineDatabase {
 		return json;
 	}
 
-	public static void readFromJson(JsonArray json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return;
-		}
+	public static void readFromJson(JsonArray json) {
 		questLines.clear();
 		ArrayList<QuestLine> unassigned = new ArrayList<>();
 		HashMap<Integer, Integer> orderMap = new HashMap<>();
@@ -145,7 +138,7 @@ public final class QuestLineDatabase {
 			int id = JsonHelper.GetInt(jql, "lineID", -1);
 			int order = JsonHelper.GetInt(jql, "order", -1);
 			QuestLine line = new QuestLine();
-			line.readFromJson(entry.getAsJsonObject(), saveType);
+			line.readFromJson(entry.getAsJsonObject());
 			if(id >= 0) {
 				questLines.put(id, line);
 			} else {

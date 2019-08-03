@@ -1,7 +1,6 @@
 package betterquesting.network.handlers;
 
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.IPacketHandler;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.utils.JsonHelper;
@@ -82,7 +81,7 @@ public class PktHandlerQuestEdit implements IPacketHandler {
 			if(data.hasKey("data") && data.hasKey("questID")) {
 				nID = data.getInteger("questID");
 				JsonObject base = NBTConverter.NBTtoJSON_Compound(data.getCompoundTag("data"), new JsonObject());
-				nq.readFromJson(JsonHelper.GetObject(base, "config"), EnumSaveType.CONFIG);
+				nq.readFromJson(JsonHelper.GetObject(base, "config"));
 			}
 			QuestDatabase.add(nq, nID);
 			PacketSender.sendToAll(nq.getSyncPacket());

@@ -21,8 +21,8 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 	private final ArrayList<GuiButtonThemed> list = new ArrayList<>();
 	private static int dragSnap = 2;
 	private static final int[] snaps = new int[] {1, 4, 6, 8, 12, 24};
-	private final GuiButtonThemed btnOpen, btnNew, btnGrab, btnSnap, btnLink, btnCopy, btnRem, btnDel, btnCom, btnRes, btnIco, btnSca;
-	private final IToolboxTool toolOpen, toolNew, toolGrab, toolLink, toolCopy, toolRem, toolDel, toolCom, toolRes, toolIco, toolSca;
+	private final GuiButtonThemed btnOpen, btnNew, btnGrab, btnSnap, btnLink, btnCopy, btnRem, btnDel, btnCom, btnRes, btnIco;
+	private final IToolboxTool toolOpen, toolNew, toolGrab, toolLink, toolCopy, toolRem, toolDel, toolCom, toolRes, toolIco;
 	private final GuiScrollingButtons btnList;
 
 	public ToolboxGuiMain(IGuiQuestLine gui, int posX, int posY, int sizeX, int sizeY) {
@@ -37,7 +37,6 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 		toolCom = new ToolboxToolComplete();
 		toolRes = new ToolboxToolReset();
 		toolIco = new ToolboxToolIcon();
-		toolSca = new ToolboxToolScale();
 		IToolboxTool curTool = gui.getActiveTool();
 		btnList = new GuiScrollingButtons(Minecraft.getMinecraft(), posX, posY, sizeX, sizeY);
 		btnOpen = new GuiButtonThemed(0, posX + 8, posY + 8, (sizeX - 8) / 2, 20, "", false);
@@ -99,12 +98,6 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 		setButtonTooltip(btnIco, I18n.format("betterquesting.toolbox.tool.icon.name"), I18n.format("betterquesting.toolbox.tool.icon.desc"));
 		list.add(btnIco);
 		btnIco.enabled = curTool != toolIco;
-		btnSca = new GuiButtonThemed(2, posX + 36, posY + 148, (sizeX - 8) / 2, 20, "", false);
-		btnSca.setIcon(new ResourceLocation("betterquesting:textures/gui/editor_icons.png"), 144, 16, 16, 16, true);
-		setButtonTooltip(btnSca, I18n.format("betterquesting.toolbox.tool.scale.name"), I18n.format("betterquesting.toolbox.tool.scale.desc"));
-		list.add(btnSca);
-		btnSca.enabled = curTool != toolSca;
-		btnList.addButtonRow(btnIco, btnSca);
 		if(gui.getActiveTool() == null) {
 			gui.setActiveTool(toolOpen);
 			resetButtons();
@@ -218,11 +211,6 @@ public class ToolboxGuiMain extends GuiElement implements IGuiEmbedded {
 			btnIco.playPressSound(btnIco.mc.getSoundHandler());
 			btnIco.enabled = false;
 			gui.setActiveTool(toolIco);
-		} else if(btnSca.mousePressed(btnSca.mc, mx, my)) {
-			resetButtons();
-			btnSca.playPressSound(btnSca.mc.getSoundHandler());
-			btnSca.enabled = false;
-			gui.setActiveTool(toolSca);
 		}
 	}
 

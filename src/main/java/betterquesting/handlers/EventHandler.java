@@ -1,6 +1,5 @@
 package betterquesting.handlers;
 
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.questing.tasks.ITickableTask;
 import betterquesting.api.utils.JsonHelper;
@@ -15,8 +14,8 @@ import betterquesting.questing.QuestInstance;
 import betterquesting.questing.QuestLineDatabase;
 import betterquesting.questing.party.PartyInstance;
 import betterquesting.questing.party.PartyManager;
-import betterquesting.storage.LifeDatabase;
 import betterquesting.storage.NameCache;
+import betterquesting.storage.PlayerInstance;
 import betterquesting.storage.QuestSettings;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -115,23 +114,12 @@ public class EventHandler {
 	@SubscribeEvent
 	public void onWorldSave(WorldEvent.Save event) {
 		if(!event.world.isRemote && curWorldDir != null && event.world.provider.dimensionId == 0) {
-			JsonObject jsonCon = new JsonObject();
-			jsonCon.add("questSettings", QuestSettings.writeToJson(new JsonObject()));
-			jsonCon.add("questDatabase", QuestDatabase.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-			jsonCon.add("questLines", QuestLineDatabase.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-			JsonHelper.WriteToFile(new File(curWorldDir, "QuestDatabase.json"), jsonCon);
-			JsonObject jsonProg = new JsonObject();
-			jsonProg.add("questProgress", QuestDatabase.writeToJson(new JsonArray(), EnumSaveType.PROGRESS));
-			JsonHelper.WriteToFile(new File(curWorldDir, "QuestProgress.json"), jsonProg);
 			JsonObject jsonP = new JsonObject();
-			jsonP.add("parties", PartyManager.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+			jsonP.add("parties", PartyManager.writeToJson(new JsonArray()));
 			JsonHelper.WriteToFile(new File(curWorldDir, "QuestingParties.json"), jsonP);
 			JsonObject jsonN = new JsonObject();
-			jsonN.add("nameCache", NameCache.writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+			jsonN.add("nameCache", NameCache.writeToJson(new JsonArray()));
 			JsonHelper.WriteToFile(new File(curWorldDir, "NameCache.json"), jsonN);
-			JsonObject jsonL = new JsonObject();
-			jsonL.add("lifeDatabase", LifeDatabase.writeToJson(new JsonObject()));
-			JsonHelper.WriteToFile(new File(curWorldDir, "LifeDatabase.json"), jsonL);
 		}
 	}
 
@@ -142,7 +130,6 @@ public class EventHandler {
 			QuestSettings.reset();
 			QuestDatabase.reset();
 			QuestLineDatabase.reset();
-			LifeDatabase.reset();
 			NameCache.reset();
 		}
 	}
@@ -155,7 +142,6 @@ public class EventHandler {
 		QuestSettings.reset();
 		QuestDatabase.reset();
 		QuestLineDatabase.reset();
-		LifeDatabase.reset();
 		NameCache.reset();
 		MinecraftServer server = MinecraftServer.getServer();
 		if(server.isSinglePlayer()) {
@@ -163,30 +149,18 @@ public class EventHandler {
 		} else {
 			curWorldDir = server.getFile(server.getFolderName() + "/betterquesting");
 		}
-		File f2 = new File(curWorldDir, "QuestProgress.json");
-		JsonObject j2 = new JsonObject();
-		if(f2.exists()) {
-			j2 = JsonHelper.ReadFromFile(f2);
-		}
-		QuestDatabase.readFromJson(JsonHelper.GetArray(j2, "questProgress"), EnumSaveType.PROGRESS);
 		File f3 = new File(curWorldDir, "QuestingParties.json");
 		JsonObject j3 = new JsonObject();
 		if(f3.exists()) {
 			j3 = JsonHelper.ReadFromFile(f3);
 		}
-		PartyManager.readFromJson(JsonHelper.GetArray(j3, "parties"), EnumSaveType.CONFIG);
+		PartyManager.readFromJson(JsonHelper.GetArray(j3, "parties"));
 		File f4 = new File(curWorldDir, "NameCache.json");
 		JsonObject j4 = new JsonObject();
 		if(f4.exists()) {
 			j4 = JsonHelper.ReadFromFile(f4);
 		}
-		NameCache.readFromJson(JsonHelper.GetArray(j4, "nameCache"), EnumSaveType.CONFIG);
-		File f5 = new File(curWorldDir, "LifeDatabase.json");
-		JsonObject j5 = new JsonObject();
-		if(f5.exists()) {
-			j5 = JsonHelper.ReadFromFile(f5);
-		}
-		LifeDatabase.readFromJson(JsonHelper.GetObject(j5, "lifeDatabase"));
+		NameCache.readFromJson(JsonHelper.GetArray(j4, "nameCache"));
 		BetterQuesting.logger.info("Loaded " + QuestDatabase.size() + " quests");
 		BetterQuesting.logger.info("Loaded " + QuestLineDatabase.size() + " quest lines");
 		BetterQuesting.logger.info("Loaded " + PartyManager.size() + " parties");
@@ -201,7 +175,6 @@ public class EventHandler {
 			PacketSender.sendToPlayer(QuestSettings.getSyncPacket(), mpPlayer);
 			PacketSender.sendToPlayer(QuestDatabase.getSyncPacket(), mpPlayer);
 			PacketSender.sendToPlayer(QuestLineDatabase.getSyncPacket(), mpPlayer);
-			PacketSender.sendToPlayer(LifeDatabase.getSyncPacket(), mpPlayer);
 			PacketSender.sendToPlayer(PartyManager.getSyncPacket(), mpPlayer);
 		}
 	}
@@ -238,14 +211,9 @@ public class EventHandler {
 		EntityPlayerMP player = (EntityPlayerMP) event.entityLiving;
 		UUID uuid = NameCache.getQuestingUUID(player);
 		PartyInstance party = PartyManager.getUserParty(uuid);
-		int lives;
-		if(party == null || !party.sharedLives) {
-			lives = LifeDatabase.getLives(uuid) - 1;
-			LifeDatabase.setLives(uuid, lives);
-		} else {
-			lives = LifeDatabase.getLives(party) - 1;
-			LifeDatabase.setLives(party, lives);
-		}
+		PlayerInstance pInst = NameCache.getInstance(party == null || !party.sharedLives ? uuid : party.getOwner());
+		int lives = pInst.lives - 1;
+		pInst.lives = lives;
 		if(lives <= 0) {
 			MinecraftServer server = MinecraftServer.getServer();
 			if(server == null) {

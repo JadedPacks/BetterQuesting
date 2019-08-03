@@ -4,7 +4,6 @@ import betterquesting.api.client.gui.controls.GuiButtonQuestInstance;
 import betterquesting.api.client.gui.misc.IGuiQuestLine;
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.client.toolbox.ToolboxGuiMain;
@@ -64,7 +63,7 @@ public class ToolboxToolCopy implements IToolboxTool {
 			GuiButtonQuestInstance tmpBtn = gui.getQuestLine().getButtonAt(mx, my);
 			if(tmpBtn != null) {
 				QuestInstance tmpQ = new QuestInstance();
-				tmpQ.readFromJson(tmpBtn.getQuest().writeToJson(new JsonObject(), EnumSaveType.CONFIG), EnumSaveType.CONFIG);
+				tmpQ.readFromJson(tmpBtn.getQuest().writeToJson(new JsonObject()));
 				btnQuest = new GuiButtonQuestInstance(0, mx, my, tmpBtn.width, tmpBtn.height, tmpQ);
 			}
 		} else {
@@ -72,19 +71,19 @@ public class ToolboxToolCopy implements IToolboxTool {
 			QuestLine qLine = gui.getQuestLine().getQuestLine();
 			int qID = QuestDatabase.nextKey();
 			int lID = QuestLineDatabase.getKey(qLine);
-			QuestLineEntry qe = new QuestLineEntry(mx, my, Math.max(btnQuest.width, btnQuest.height));
+			QuestLineEntry qe = new QuestLineEntry(mx, my);
 			qLine.add(qe, qID);
 			btnQuest = null;
 			NBTTagCompound tag1 = new NBTTagCompound();
 			JsonObject base1 = new JsonObject();
-			base1.add("config", quest.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+			base1.add("config", quest.writeToJson(new JsonObject()));
 			tag1.setTag("data", NBTConverter.JSONtoNBT_Object(base1, new NBTTagCompound()));
 			tag1.setInteger("action", EnumPacketAction.ADD.ordinal());
 			tag1.setInteger("questID", qID);
 			PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.QUEST_EDIT.GetLocation(), tag1));
 			NBTTagCompound tag2 = new NBTTagCompound();
 			JsonObject base2 = new JsonObject();
-			base2.add("line", qLine.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+			base2.add("line", qLine.writeToJson(new JsonObject()));
 			tag2.setTag("data", NBTConverter.JSONtoNBT_Object(base2, new NBTTagCompound()));
 			tag2.setInteger("action", EnumPacketAction.EDIT.ordinal());
 			tag2.setInteger("lineID", lID);

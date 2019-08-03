@@ -12,7 +12,6 @@ import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.party.PartyInstance;
 import betterquesting.questing.party.PartyManager;
-import betterquesting.storage.LifeDatabase;
 import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 import net.minecraft.client.gui.GuiButton;
@@ -49,20 +48,20 @@ public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 			return;
 		}
 		heart = new ItemStack(BetterQuesting.extraLife);
-		lives = LifeDatabase.getLives(playerID);
+		lives = NameCache.getInstance(playerID).lives;
 		invites.clear();
-		for(int i : PartyManager.getPartyInvites(playerID)) {
+		for(int i : PartyManager.getPartyInvites(mc.thePlayer)) {
 			invites.add(PartyManager.getValue(i));
 		}
 		rightScroll = 0;
 		maxRows = (sizeY - 72) / 20;
 		btnCreate = new GuiButtonThemed(1, guiLeft + sizeX / 4 - 75, height / 2, 150, 20, I18n.format("betterquesting.btn.party_new"), true);
-		this.buttonList.add(btnCreate);
+		buttonList.add(btnCreate);
 		fieldName = new GuiTextField(mc.fontRendererObj, guiLeft + sizeX / 4 - 74, height / 2 - 19, 148, 18);
 		fieldName.setText("New Party");
 		for(int i = 0; i < maxRows; i++) {
 			GuiButtonThemed btn = new GuiButtonThemed(this.buttonList.size(), guiLeft + sizeX - 74, guiTop + 48 + (i * 20), 50, 20, I18n.format("betterquesting.btn.party_join"), true);
-			this.buttonList.add(btn);
+			buttonList.add(btn);
 		}
 		RefreshColumns();
 	}
@@ -135,7 +134,7 @@ public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 	protected void keyTyped(char character, int keyCode) {
 		super.keyTyped(character, keyCode);
 		fieldName.textboxKeyTyped(character, keyCode);
-		btnCreate.enabled = fieldName.getText().length() >= 0;
+		btnCreate.enabled = fieldName.getText().length() > 0;
 	}
 
 	@Override
@@ -155,7 +154,8 @@ public class GuiNoParty extends GuiScreenThemed implements INeedsRefresh {
 
 	public void RefreshColumns() {
 		rightScroll = Math.max(0, MathHelper.clamp_int(rightScroll, 0, invites.size() - maxRows));
-		for(GuiButton btn : (List<GuiButton>) this.buttonList) {
+		for(Object button : buttonList) {
+			GuiButton btn = (GuiButton) button;
 			int n1 = btn.id - 2,
 				n2 = n1 / maxRows,
 				n3 = n1 % maxRows + rightScroll;

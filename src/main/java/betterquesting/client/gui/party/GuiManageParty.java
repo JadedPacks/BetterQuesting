@@ -5,7 +5,6 @@ import betterquesting.api.client.gui.controls.GuiButtonThemed;
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.enums.EnumPacketAction;
 import betterquesting.api.enums.EnumPartyStatus;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.RenderUtils;
@@ -15,7 +14,6 @@ import betterquesting.network.PacketSender;
 import betterquesting.network.PacketTypeNative;
 import betterquesting.questing.party.PartyInstance;
 import betterquesting.questing.party.PartyManager;
-import betterquesting.storage.LifeDatabase;
 import betterquesting.storage.NameCache;
 import betterquesting.storage.QuestSettings;
 import com.google.gson.JsonObject;
@@ -53,26 +51,26 @@ public class GuiManageParty extends GuiScreenThemed implements INeedsRefresh {
 			return;
 		}
 		UUID playerID = NameCache.getQuestingUUID(mc.thePlayer);
-		status = NameCache.isOP(playerID) ? EnumPartyStatus.OWNER : party.getStatus(playerID);
+		status = NameCache.isOP(mc.thePlayer) ? EnumPartyStatus.OWNER : party.getStatus(playerID);
 		heart = new ItemStack(BetterQuesting.extraLife);
-		lives = LifeDatabase.getLives(playerID);
+		lives = NameCache.getInstance(playerID).lives;
 		memList = party.getMembers();
 		setTitle(I18n.format("betterquesting.title.party", party.name));
 		rightScroll = 0;
 		maxRows = (sizeY - 72) / 20;
-		this.buttonList.add(new GuiButtonThemed(1, guiLeft + sizeX / 4 - 75, height / 2 + 40, 70, 20, I18n.format("betterquesting.btn.party_leave"), true));
+		buttonList.add(new GuiButtonThemed(1, guiLeft + sizeX / 4 - 75, height / 2 + 40, 70, 20, I18n.format("betterquesting.btn.party_leave"), true));
 		GuiButtonThemed lifeBtn = new GuiButtonThemed(3, guiLeft + sizeX / 4 - 75, height / 2, 150, 20, I18n.format("betterquesting.btn.party_share_lives") + ": " + party.sharedLives, true);
 		lifeBtn.enabled = status.ordinal() >= 3;
-		this.buttonList.add(lifeBtn);
+		buttonList.add(lifeBtn);
 		GuiButtonThemed invBtn = new GuiButtonThemed(4, guiLeft + sizeX / 4 + 5, height / 2 + 40, 70, 20, I18n.format("betterquesting.btn.party_invite"), true);
 		invBtn.enabled = status.ordinal() >= 2;
-		this.buttonList.add(invBtn);
+		buttonList.add(invBtn);
 		fieldName = new GuiTextField(mc.fontRendererObj, guiLeft + sizeX / 4 - 74, height / 2 - 59, 148, 18);
 		fieldName.setText(party.name);
 		fieldName.setEnabled(status.ordinal() >= 3);
 		for(int i = 0; i < maxRows; i++) {
-			GuiButtonThemed btn = new GuiButtonThemed(this.buttonList.size() + 1, guiLeft + sizeX - 74, guiTop + 48 + (i * 20), 50, 20, I18n.format("betterquesting.btn.party_kick"), true);
-			this.buttonList.add(btn);
+			GuiButtonThemed btn = new GuiButtonThemed(buttonList.size() + 1, guiLeft + sizeX - 74, guiTop + 48 + (i * 20), 50, 20, I18n.format("betterquesting.btn.party_kick"), true);
+			buttonList.add(btn);
 		}
 		RefreshColumns();
 	}
@@ -179,21 +177,22 @@ public class GuiManageParty extends GuiScreenThemed implements INeedsRefresh {
 	}
 
 	public void SendChanges() {
-		if(status != EnumPartyStatus.OWNER && !NameCache.isOP(NameCache.getQuestingUUID(mc.thePlayer))) {
+		if(status != EnumPartyStatus.OWNER && !NameCache.isOP(mc.thePlayer)) {
 			return;
 		}
 		NBTTagCompound tags = new NBTTagCompound();
 		tags.setInteger("action", EnumPacketAction.EDIT.ordinal());
 		tags.setInteger("partyID", PartyManager.getKey(party));
 		JsonObject base = new JsonObject();
-		base.add("party", party.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+		base.add("party", party.writeToJson(new JsonObject()));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.PARTY_EDIT.GetLocation(), tags));
 	}
 
 	public void RefreshColumns() {
 		rightScroll = Math.max(0, MathHelper.clamp_int(rightScroll, 0, memList.size() - maxRows));
-		for(GuiButton btn : (List<GuiButton>) this.buttonList) {
+		for(Object button : buttonList) {
+			GuiButton btn = (GuiButton) button;
 			int n1 = btn.id - 5,
 				n2 = n1 / maxRows,
 				n3 = n1 % maxRows + rightScroll;

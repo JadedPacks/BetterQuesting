@@ -21,7 +21,6 @@ public class PacketTypeRegistry {
 		registerHandler(new PktHandlerPartySync());
 		registerHandler(new PktHandlerDetect());
 		registerHandler(new PktHandlerClaim());
-		registerHandler(new PktHandlerLives());
 		registerHandler(new PktHandlerNotification());
 		registerHandler(new PktHandlerNameCache());
 		registerHandler(new PktHandlerSettings());

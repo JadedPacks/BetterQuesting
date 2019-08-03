@@ -5,7 +5,6 @@ import betterquesting.api.client.gui.controls.GuiButtonQuestInstance;
 import betterquesting.api.client.gui.misc.IGuiQuestLine;
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.RenderUtils;
@@ -66,15 +65,13 @@ public class ToolboxToolLink extends GuiElement implements IToolboxTool {
 				}
 				NBTTagCompound tag1 = new NBTTagCompound();
 				JsonObject base1 = new JsonObject();
-				base1.add("config", b1.getQuest().writeToJson(new JsonObject(), EnumSaveType.CONFIG));
-				base1.add("progress", b1.getQuest().writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
+				base1.add("config", b1.getQuest().writeToJson(new JsonObject()));
 				tag1.setTag("data", NBTConverter.JSONtoNBT_Object(base1, new NBTTagCompound()));
 				tag1.setInteger("action", EnumPacketAction.EDIT.ordinal());
 				tag1.setInteger("questID", QuestDatabase.getKey(b1.getQuest()));
 				NBTTagCompound tag2 = new NBTTagCompound();
 				JsonObject base2 = new JsonObject();
-				base2.add("config", b2.getQuest().writeToJson(new JsonObject(), EnumSaveType.CONFIG));
-				base1.add("progress", b2.getQuest().writeToJson(new JsonObject(), EnumSaveType.PROGRESS));
+				base2.add("config", b2.getQuest().writeToJson(new JsonObject()));
 				tag2.setTag("data", NBTConverter.JSONtoNBT_Object(base2, new NBTTagCompound()));
 				tag2.setInteger("action", EnumPacketAction.EDIT.ordinal());
 				tag2.setInteger("questID", QuestDatabase.getKey(b2.getQuest()));

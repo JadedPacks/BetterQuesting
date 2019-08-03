@@ -15,7 +15,6 @@ public class BQ_CommandAdmin extends CommandBase {
 		coms.add(new QuestCommandHardcore());
 		coms.add(new QuestCommandReset());
 		coms.add(new QuestCommandComplete());
-		coms.add(new QuestCommandDefaults());
 		coms.add(new QuestCommandLives());
 	}
 

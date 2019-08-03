@@ -5,7 +5,6 @@ import betterquesting.api.client.gui.controls.GuiButtonQuestInstance;
 import betterquesting.api.client.gui.misc.IGuiQuestLine;
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.client.toolbox.ToolboxGuiMain;
@@ -81,7 +80,7 @@ public class ToolboxToolGrab extends GuiElement implements IToolboxTool {
 				qle.setPosition(grabbed.xPosition, grabbed.yPosition);
 				NBTTagCompound tag2 = new NBTTagCompound();
 				JsonObject base2 = new JsonObject();
-				base2.add("line", qLine.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+				base2.add("line", qLine.writeToJson(new JsonObject()));
 				tag2.setTag("data", NBTConverter.JSONtoNBT_Object(base2, new NBTTagCompound()));
 				tag2.setInteger("action", EnumPacketAction.EDIT.ordinal());
 				tag2.setInteger("lineID", lID);

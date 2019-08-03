@@ -7,7 +7,6 @@ import betterquesting.api.client.gui.lists.GuiScrollingButtons;
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.api.utils.RenderUtils;
@@ -119,9 +118,8 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 					for(QuestLineEntry qe2 : line.getAllValues()) {
 						int x2 = qe2.getPosX();
 						int y2 = qe2.getPosY();
-						int s2 = qe2.getSize();
-						if(x1 >= x2 && x1 < x2 + s2 && y1 >= y2 && y1 < y2 + s2) {
-							x1 += s2;
+						if(x1 >= x2 && x1 < x2 + 24 && y1 >= y2 && y1 < y2 + 24) {
+							x1 += 24;
 							continue topLoop;
 						}
 					}
@@ -148,7 +146,7 @@ public class GuiQuestLineEditorB extends GuiScreenThemed implements IVolatileScr
 		NBTTagCompound tags = new NBTTagCompound();
 		if(action == EnumPacketAction.EDIT && line != null) {
 			JsonObject base = new JsonObject();
-			base.add("line", line.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+			base.add("line", line.writeToJson(new JsonObject()));
 			tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		}
 		tags.setInteger("action", action.ordinal());

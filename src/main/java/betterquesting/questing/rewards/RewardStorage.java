@@ -1,6 +1,5 @@
 package betterquesting.questing.rewards;
 
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.questing.rewards.IReward;
 import betterquesting.api.storage.IRegStorageBase;
 import betterquesting.api.utils.JsonHelper;
@@ -81,13 +80,10 @@ public class RewardStorage implements IRegStorageBase<Integer, IReward> {
 		database.clear();
 	}
 
-	public JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return json;
-		}
+	public JsonArray writeToJson(JsonArray json) {
 		for(Entry<Integer, IReward> rew : database.entrySet()) {
 			ResourceLocation rewardID = rew.getValue().getFactoryID();
-			JsonObject rJson = rew.getValue().writeToJson(new JsonObject(), EnumSaveType.CONFIG);
+			JsonObject rJson = rew.getValue().writeToJson(new JsonObject());
 			rJson.addProperty("rewardID", rewardID.toString());
 			rJson.addProperty("index", rew.getKey());
 			json.add(rJson);
@@ -95,10 +91,7 @@ public class RewardStorage implements IRegStorageBase<Integer, IReward> {
 		return json;
 	}
 
-	public void readFromJson(JsonArray json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return;
-		}
+	public void readFromJson(JsonArray json) {
 		database.clear();
 		for(JsonElement entry : json) {
 			if(entry == null || !entry.isJsonObject()) {
@@ -107,7 +100,7 @@ public class RewardStorage implements IRegStorageBase<Integer, IReward> {
 			JsonObject jsonReward = entry.getAsJsonObject();
 			IReward reward = RewardRegistry.INSTANCE.createReward(new ResourceLocation(JsonHelper.GetString(jsonReward, "rewardID", "")));
 			if(reward != null) {
-				reward.readFromJson(jsonReward, EnumSaveType.CONFIG);
+				reward.readFromJson(jsonReward);
 				add(reward, nextKey());
 			}
 		}

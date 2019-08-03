@@ -1,6 +1,5 @@
 package betterquesting.questing.tasks;
 
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.questing.tasks.ITask;
 import betterquesting.api.storage.IRegStorageBase;
 import betterquesting.api.utils.JsonHelper;
@@ -80,43 +79,17 @@ public class TaskStorage implements IRegStorageBase<Integer, ITask> {
 		database.clear();
 	}
 
-	public JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
-		switch(saveType) {
-			case CONFIG:
-				writeToJson_Config(json);
-				break;
-			case PROGRESS:
-				writeToJson_Progress(json);
-				break;
-			default:
-				break;
+	public JsonArray writeToJson(JsonArray json) {
+		for(Entry<Integer, ITask> entry : database.entrySet()) {
+			ResourceLocation taskID = entry.getValue().getFactoryID();
+			JsonObject qJson = entry.getValue().writeToJson(new JsonObject());
+			qJson.addProperty("taskID", taskID.toString());
+			json.add(qJson);
 		}
 		return json;
 	}
 
-	public void readFromJson(JsonArray json, EnumSaveType saveType) {
-		switch(saveType) {
-			case CONFIG:
-				readFromJson_Config(json);
-				break;
-			case PROGRESS:
-				readFromJson_Progress(json);
-				break;
-			default:
-				break;
-		}
-	}
-
-	private void writeToJson_Config(JsonArray json) {
-		for(Entry<Integer, ITask> entry : database.entrySet()) {
-			ResourceLocation taskID = entry.getValue().getFactoryID();
-			JsonObject qJson = entry.getValue().writeToJson(new JsonObject(), EnumSaveType.CONFIG);
-			qJson.addProperty("taskID", taskID.toString());
-			json.add(qJson);
-		}
-	}
-
-	private void readFromJson_Config(JsonArray json) {
+	public void readFromJson(JsonArray json) {
 		database.clear();
 		for(JsonElement entry : json) {
 			if(entry == null || !entry.isJsonObject()) {
@@ -125,33 +98,8 @@ public class TaskStorage implements IRegStorageBase<Integer, ITask> {
 			JsonObject jsonTask = entry.getAsJsonObject();
 			ITask task = TaskRegistry.INSTANCE.createTask(new ResourceLocation(JsonHelper.GetString(jsonTask, "taskID", "")));
 			if(task != null) {
-				task.readFromJson(jsonTask, EnumSaveType.CONFIG);
+				task.readFromJson(jsonTask);
 				add(task, nextKey());
-			}
-		}
-	}
-
-	private void writeToJson_Progress(JsonArray json) {
-		for(Entry<Integer, ITask> entry : database.entrySet()) {
-			ResourceLocation taskID = entry.getValue().getFactoryID();
-			JsonObject qJson = entry.getValue().writeToJson(new JsonObject(), EnumSaveType.PROGRESS);
-			qJson.addProperty("taskID", taskID.toString());
-			json.add(qJson);
-		}
-	}
-
-	private void readFromJson_Progress(JsonArray json) {
-		for(int i = 0; i < json.size(); i++) {
-			JsonElement entry = json.get(i);
-			if(entry == null || !entry.isJsonObject()) {
-				continue;
-			}
-			JsonObject jsonTask = entry.getAsJsonObject();
-			ITask task = getValue(i);
-			if(task != null) {
-				if(task.getFactoryID().equals(new ResourceLocation(JsonHelper.GetString(jsonTask, "taskID", "")))) {
-					task.readFromJson(jsonTask, EnumSaveType.PROGRESS);
-				}
 			}
 		}
 	}

@@ -1,6 +1,5 @@
 package betterquesting.storage;
 
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
@@ -9,13 +8,13 @@ import betterquesting.network.PacketTypeNative;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.mojang.authlib.GameProfile;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -23,18 +22,21 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public final class NameCache {
 	private static final ConcurrentHashMap<UUID, JsonObject> cache = new ConcurrentHashMap<>();
+	private static HashMap<UUID, PlayerInstance> players = new HashMap<>();
 
 	public static UUID getQuestingUUID(EntityPlayer player) {
 		if(player == null) {
 			return null;
 		}
-		if(player.worldObj.isRemote) {
-			UUID uuid = getUUID(player.getGameProfile().getName());
-			if(uuid != null) {
-				return uuid;
-			}
-		}
 		return player.getGameProfile().getId();
+	}
+
+	public static boolean isOP(EntityPlayer player) {
+		return player.canCommandSenderUseCommand(2, "");
+	}
+
+	public static PlayerInstance getInstance(UUID uuid) {
+		return players.get(uuid);
 	}
 
 	public static String getName(UUID uuid) {
@@ -54,29 +56,17 @@ public final class NameCache {
 		return null;
 	}
 
-	public static boolean isOP(UUID uuid) {
-		if(!cache.containsKey(uuid)) {
-			return false;
-		} else {
-			return JsonHelper.GetBoolean(cache.get(uuid), "isOP", false);
-		}
-	}
-
 	public static void updateNames(MinecraftServer server) {
-		String[] names = server.getPlayerProfileCache().func_152654_a();
-		for(String name : names) {
+		for(String name : server.getPlayerProfileCache().func_152654_a()) {
 			EntityPlayerMP player = server.getConfigurationManager().getPlayerByUsername(name);
-			GameProfile prof = player == null ? null : player.getGameProfile();
-			if(prof != null) {
-				UUID oldID = getUUID(prof.getName());
-				while(oldID != null) {
+			if(player != null) {
+				UUID oldID;
+				while((oldID = getUUID(player.getDisplayName())) != null) {
 					cache.remove(oldID);
-					oldID = getUUID(prof.getName());
 				}
 				JsonObject json = new JsonObject();
-				json.addProperty("name", prof.getName());
-				json.addProperty("isOP", server.getConfigurationManager().canSendCommands(prof));
-				cache.put(prof.getId(), json);
+				json.addProperty("name", player.getDisplayName());
+				cache.put(player.getUniqueID(), json);
 			}
 		}
 		PacketSender.sendToAll(getSyncPacket());
@@ -89,34 +79,27 @@ public final class NameCache {
 	public static QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject json = new JsonObject();
-		json.add("cache", writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+		json.add("cache", writeToJson(new JsonArray()));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound()));
 		return new QuestingPacket(PacketTypeNative.NAME_CACHE.GetLocation(), tags);
 	}
 
 	public static void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
-		readFromJson(JsonHelper.GetArray(base, "cache"), EnumSaveType.CONFIG);
+		readFromJson(JsonHelper.GetArray(base, "cache"));
 	}
 
-	public static JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return json;
-		}
+	public static JsonArray writeToJson(JsonArray json) {
 		for(Entry<UUID, JsonObject> entry : cache.entrySet()) {
 			JsonObject jn = new JsonObject();
 			jn.addProperty("uuid", entry.getKey().toString());
 			jn.addProperty("name", JsonHelper.GetString(entry.getValue(), "name", ""));
-			jn.addProperty("isOP", JsonHelper.GetBoolean(entry.getValue(), "isOP", false));
 			json.add(jn);
 		}
 		return json;
 	}
 
-	public static void readFromJson(JsonArray json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return;
-		}
+	public static void readFromJson(JsonArray json) {
 		cache.clear();
 		for(JsonElement element : json) {
 			if(element == null || !element.isJsonObject()) {
@@ -124,14 +107,11 @@ public final class NameCache {
 			}
 			JsonObject jn = element.getAsJsonObject();
 			try {
-				UUID uuid = UUID.fromString(JsonHelper.GetString(jn, "uuid", ""));
-				String name = JsonHelper.GetString(jn, "name", "");
-				boolean isOP = JsonHelper.GetBoolean(jn, "isOP", false);
-
 				JsonObject j2 = new JsonObject();
-				j2.addProperty("name", name);
-				j2.addProperty("isOP", isOP);
+				j2.addProperty("name", JsonHelper.GetString(jn, "name", ""));
+				UUID uuid = UUID.fromString(JsonHelper.GetString(jn, "uuid", ""));
 				cache.put(uuid, j2);
+				players.put(uuid, new PlayerInstance(uuid));
 			} catch(Exception ignored) {}
 		}
 	}

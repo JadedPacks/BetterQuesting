@@ -1,6 +1,5 @@
 package betterquesting.questing;
 
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
@@ -50,10 +49,6 @@ public final class QuestDatabase {
 		return true;
 	}
 
-	public static boolean removeValue(QuestInstance quest) {
-		return removeKey(getKey(quest));
-	}
-
 	public static QuestInstance getValue(Integer id) {
 		return database.get(id);
 	}
@@ -86,55 +81,17 @@ public final class QuestDatabase {
 	public static QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject base = new JsonObject();
-		base.add("config", writeToJson(new JsonArray(), EnumSaveType.CONFIG));
-		base.add("progress", writeToJson(new JsonArray(), EnumSaveType.PROGRESS));
+		base.add("config", writeToJson(new JsonArray()));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		return new QuestingPacket(PacketTypeNative.QUEST_DATABASE.GetLocation(), tags);
 	}
 
 	public static void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
-		readFromJson(JsonHelper.GetArray(base, "config"), EnumSaveType.CONFIG);
-		readFromJson(JsonHelper.GetArray(base, "progress"), EnumSaveType.PROGRESS);
+		readFromJson(JsonHelper.GetArray(base, "config"));
 	}
 
-	public static JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
-		switch(saveType) {
-			case CONFIG:
-				writeToJson_Config(json);
-				break;
-			case PROGRESS:
-				writeToJson_Progress(json);
-				break;
-			default:
-				break;
-		}
-		return json;
-	}
-
-	public static void readFromJson(JsonArray json, EnumSaveType saveType) {
-		switch(saveType) {
-			case CONFIG:
-				readFromJson_Config(json);
-				break;
-			case PROGRESS:
-				readFromJson_Progress(json);
-				break;
-			default:
-				break;
-		}
-	}
-
-	private static void writeToJson_Config(JsonArray json) {
-		for(Entry<Integer, QuestInstance> entry : database.entrySet()) {
-			JsonObject jq = new JsonObject();
-			entry.getValue().writeToJson(jq, EnumSaveType.CONFIG);
-			jq.addProperty("questID", entry.getKey());
-			json.add(jq);
-		}
-	}
-
-	private static void readFromJson_Config(JsonArray json) {
+	public static void readFromJson(JsonArray json) {
 		database.clear();
 		for(JsonElement entry : json) {
 			if(entry == null || !entry.isJsonObject()) {
@@ -146,33 +103,18 @@ public final class QuestDatabase {
 			}
 			QuestInstance quest = getValue(qID);
 			quest = quest != null ? quest : createNew();
-			quest.readFromJson(entry.getAsJsonObject(), EnumSaveType.CONFIG);
+			quest.readFromJson(entry.getAsJsonObject());
 			database.put(qID, quest);
 		}
 	}
 
-	private static void writeToJson_Progress(JsonArray json) {
+	private static JsonArray writeToJson(JsonArray json) {
 		for(Entry<Integer, QuestInstance> entry : database.entrySet()) {
 			JsonObject jq = new JsonObject();
-			entry.getValue().writeToJson(jq, EnumSaveType.PROGRESS);
+			entry.getValue().writeToJson(jq);
 			jq.addProperty("questID", entry.getKey());
 			json.add(jq);
 		}
-	}
-
-	private static void readFromJson_Progress(JsonArray json) {
-		for(JsonElement entry : json) {
-			if(entry == null || !entry.isJsonObject()) {
-				continue;
-			}
-			int qID = JsonHelper.GetInt(entry.getAsJsonObject(), "questID", -1);
-			if(qID < 0) {
-				continue;
-			}
-			QuestInstance quest = getValue(qID);
-			if(quest != null) {
-				quest.readFromJson(entry.getAsJsonObject(), EnumSaveType.PROGRESS);
-			}
-		}
+		return json;
 	}
 }

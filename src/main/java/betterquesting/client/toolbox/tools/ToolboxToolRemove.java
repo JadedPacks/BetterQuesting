@@ -4,7 +4,6 @@ import betterquesting.api.client.gui.controls.GuiButtonQuestInstance;
 import betterquesting.api.client.gui.misc.IGuiQuestLine;
 import betterquesting.api.client.toolbox.IToolboxTool;
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.NBTConverter;
 import betterquesting.network.PacketSender;
@@ -39,7 +38,7 @@ public class ToolboxToolRemove implements IToolboxTool {
 			NBTTagCompound tags = new NBTTagCompound();
 			tags.setInteger("action", EnumPacketAction.EDIT.ordinal());
 			JsonObject base = new JsonObject();
-			base.add("line", line.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+			base.add("line", line.writeToJson(new JsonObject()));
 			tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 			tags.setInteger("lineID", QuestLineDatabase.getKey(line));
 			PacketSender.sendToServer(new QuestingPacket(PacketTypeNative.LINE_EDIT.GetLocation(), tags));

@@ -7,7 +7,6 @@ import betterquesting.api.client.gui.lists.GuiScrollingButtons;
 import betterquesting.api.client.gui.misc.INeedsRefresh;
 import betterquesting.api.client.gui.misc.IVolatileScreen;
 import betterquesting.api.enums.EnumPacketAction;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.misc.ICallback;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.NBTConverter;
@@ -104,7 +103,7 @@ public class GuiQuestLineEditorA extends GuiScreenThemed implements ICallback<St
 		NBTTagCompound tags = new NBTTagCompound();
 		if(action == EnumPacketAction.EDIT && questLine != null) {
 			JsonObject base = new JsonObject();
-			base.add("line", questLine.writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+			base.add("line", questLine.writeToJson(new JsonObject()));
 			tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		}
 		tags.setInteger("lineID", questLine == null ? -1 : QuestLineDatabase.getKey(questLine));

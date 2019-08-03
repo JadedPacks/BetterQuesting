@@ -1,7 +1,6 @@
 package betterquesting.questing.party;
 
 import betterquesting.api.enums.EnumPartyStatus;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
@@ -12,11 +11,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import net.minecraft.nbt.NBTTagCompound;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.UUID;
 
 public class PartyInstance {
 	public String name = "New Party";
@@ -97,6 +93,15 @@ public class PartyInstance {
 		return new ArrayList<>(members.keySet());
 	}
 
+	public UUID getOwner() {
+		for(HashMap.Entry<UUID, EnumPartyStatus> member : members.entrySet()) {
+			if(member.getValue() == EnumPartyStatus.OWNER) {
+				return member.getKey();
+			}
+		}
+		return null;
+	}
+
 	private void hostMigrate() {
 		List<UUID> tmp = getMembers();
 		for(UUID uuid : tmp) {
@@ -121,7 +126,7 @@ public class PartyInstance {
 	public QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject base = new JsonObject();
-		base.add("party", writeToJson(new JsonObject(), EnumSaveType.CONFIG));
+		base.add("party", writeToJson(new JsonObject()));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(base, new NBTTagCompound()));
 		tags.setInteger("partyID", PartyManager.getKey(this));
 		return new QuestingPacket(PacketTypeNative.PARTY_SYNC.GetLocation(), tags);
@@ -129,13 +134,10 @@ public class PartyInstance {
 
 	public void readPacket(NBTTagCompound payload) {
 		JsonObject base = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
-		readFromJson(JsonHelper.GetObject(base, "party"), EnumSaveType.CONFIG);
+		readFromJson(JsonHelper.GetObject(base, "party"));
 	}
 
-	public JsonObject writeToJson(JsonObject json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return json;
-		}
+	public JsonObject writeToJson(JsonObject json) {
 		JsonArray memJson = new JsonArray();
 		for(Entry<UUID, EnumPartyStatus> mem : members.entrySet()) {
 			JsonObject jm = new JsonObject();
@@ -151,10 +153,7 @@ public class PartyInstance {
 		return json;
 	}
 
-	public void readFromJson(JsonObject json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return;
-		}
+	public void readFromJson(JsonObject json) {
 		JsonObject jObj = JsonHelper.GetObject(json, "properties");
 		name = JsonHelper.GetString(jObj, "name", "New Party");
 		sharedLives = JsonHelper.GetBoolean(jObj, "sharedLives", false);

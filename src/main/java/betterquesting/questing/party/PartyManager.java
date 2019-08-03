@@ -1,7 +1,6 @@
 package betterquesting.questing.party;
 
 import betterquesting.api.enums.EnumPartyStatus;
-import betterquesting.api.enums.EnumSaveType;
 import betterquesting.api.network.QuestingPacket;
 import betterquesting.api.utils.JsonHelper;
 import betterquesting.api.utils.NBTConverter;
@@ -10,6 +9,7 @@ import betterquesting.storage.NameCache;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.nbt.NBTTagCompound;
 
 import java.util.ArrayList;
@@ -31,11 +31,11 @@ public final class PartyManager {
 		return null;
 	}
 
-	public static List<Integer> getPartyInvites(UUID uuid) {
+	public static List<Integer> getPartyInvites(EntityPlayer player) {
 		ArrayList<Integer> invites = new ArrayList<>();
-		boolean isOp = NameCache.isOP(uuid);
+		boolean isOp = NameCache.isOP(player);
 		for(Entry<Integer, PartyInstance> entry : partyList.entrySet()) {
-			if(isOp || entry.getValue().getStatus(uuid) == EnumPartyStatus.INVITE) {
+			if(isOp || entry.getValue().getStatus(player.getUniqueID()) == EnumPartyStatus.INVITE) {
 				invites.add(entry.getKey());
 			}
 		}
@@ -97,32 +97,26 @@ public final class PartyManager {
 	public static QuestingPacket getSyncPacket() {
 		NBTTagCompound tags = new NBTTagCompound();
 		JsonObject json = new JsonObject();
-		json.add("parties", writeToJson(new JsonArray(), EnumSaveType.CONFIG));
+		json.add("parties", writeToJson(new JsonArray()));
 		tags.setTag("data", NBTConverter.JSONtoNBT_Object(json, new NBTTagCompound()));
 		return new QuestingPacket(PacketTypeNative.PARTY_DATABASE.GetLocation(), tags);
 	}
 
 	public static void readPacket(NBTTagCompound payload) {
 		JsonObject json = NBTConverter.NBTtoJSON_Compound(payload.getCompoundTag("data"), new JsonObject());
-		readFromJson(JsonHelper.GetArray(json, "parties"), EnumSaveType.CONFIG);
+		readFromJson(JsonHelper.GetArray(json, "parties"));
 	}
 
-	public static JsonArray writeToJson(JsonArray json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return json;
-		}
+	public static JsonArray writeToJson(JsonArray json) {
 		for(Entry<Integer, PartyInstance> entry : partyList.entrySet()) {
-			JsonObject jp = entry.getValue().writeToJson(new JsonObject(), saveType);
+			JsonObject jp = entry.getValue().writeToJson(new JsonObject());
 			jp.addProperty("partyID", entry.getKey());
 			json.add(jp);
 		}
 		return json;
 	}
 
-	public static void readFromJson(JsonArray json, EnumSaveType saveType) {
-		if(saveType != EnumSaveType.CONFIG) {
-			return;
-		}
+	public static void readFromJson(JsonArray json) {
 		partyList.clear();
 		for(JsonElement element : json) {
 			if(element == null || !element.isJsonObject()) {
@@ -134,7 +128,7 @@ public final class PartyManager {
 				continue;
 			}
 			PartyInstance party = new PartyInstance();
-			party.readFromJson(jp, EnumSaveType.CONFIG);
+			party.readFromJson(jp);
 			if(party.getMembers().size() > 0) {
 				partyList.put(partyID, party);
 			}

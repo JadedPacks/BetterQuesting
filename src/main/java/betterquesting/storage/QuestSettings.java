@@ -44,7 +44,7 @@ public class QuestSettings {
 		if(player == null) {
 			return false;
 		}
-		return edit && NameCache.isOP(NameCache.getQuestingUUID(player));
+		return edit && NameCache.isOP(player);
 	}
 
 	public static void reset() {
